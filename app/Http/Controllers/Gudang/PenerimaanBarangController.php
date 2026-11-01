@@ -10,6 +10,7 @@ use App\Models\Master\Gudang;
 use App\Models\Master\KonversiSatuan;
 use App\Models\Master\Pihak;
 use App\Models\Master\Satuan;
+use App\Rules\TenantOwnershipRule;
 use App\Services\StokService;
 use App\Services\StokBatchService;
 use Illuminate\Http\RedirectResponse;
@@ -122,7 +123,7 @@ class PenerimaanBarangController extends ModuleCrudController
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'id_gudang' => ['required', 'integer', 'exists:gudang,id_gudang'],
+            'id_gudang' => ['required', 'integer', new TenantOwnershipRule('gudang', 'id_gudang')],
             'id_pihak' => ['required', 'integer', 'exists:master_pihak,id_pihak'],
             'kode_penerimaan' => ['required', 'string', 'max:30'],
             'tanggal_terima' => ['required', 'date'],

@@ -4,6 +4,7 @@ namespace App\Models\Konsinyasi;
 
 use App\Models\Master\Barang;
 use App\Models\Master\Gudang;
+use App\Models\Master\Pihak;
 use App\Models\Tenant\Entitas;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,7 +18,7 @@ class StokKonsinyasi extends Model
     protected $primaryKey = 'id_stok_konsinyasi';
 
     protected $fillable = [
-        'id_kiriman', 'id_entitas_pemilik', 'id_entitas_penerima', 'id_gudang_penerima',
+        'id_kiriman', 'id_entitas_pemilik', 'id_pihak_pemilik', 'id_entitas_penerima', 'id_gudang_penerima',
         'id_barang', 'qty_titip', 'qty_terjual', 'qty_retur', 'qty_susut', 'qty_sisa',
         'harga_titip_satuan', 'harga_jual_satuan', 'hpp_pemilik', 'status',
     ];
@@ -41,9 +42,19 @@ class StokKonsinyasi extends Model
         return $this->belongsTo(PengirimanKonsinyasi::class, 'id_kiriman', 'id_kiriman');
     }
 
+    public function retur()
+    {
+        return $this->hasMany(ReturKonsinyasi::class, 'id_stok_konsinyasi', 'id_stok_konsinyasi');
+    }
+
     public function barang()
     {
         return $this->belongsTo(Barang::class, 'id_barang', 'id_barang');
+    }
+
+    public function pihakPemilik()
+    {
+        return $this->belongsTo(Pihak::class, 'id_pihak_pemilik', 'id_pihak')->withoutGlobalScopes();
     }
 
     // =========================================================================
@@ -80,5 +91,3 @@ class StokKonsinyasi extends Model
         });
     }
 }
-
-

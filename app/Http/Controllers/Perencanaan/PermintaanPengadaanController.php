@@ -7,6 +7,7 @@ use App\Models\Master\Barang;
 use App\Models\Master\Gudang;
 use App\Models\Perencanaan\HasilKalkulasi;
 use App\Models\Perencanaan\PermintaanPengadaan;
+use App\Rules\TenantOwnershipRule;
 use App\Services\Perencanaan\PerbandinganHargaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -105,7 +106,7 @@ class PermintaanPengadaanController extends ModuleCrudController
         $validated = $request->validate([
             'id_hasil' => ['required', 'integer', 'exists:hasil_kalkulasi,id_hasil'],
             'id_barang' => ['required', 'integer', 'exists:master_barang,id_barang'],
-            'id_gudang' => ['required', 'integer', 'exists:gudang,id_gudang'],
+            'id_gudang' => ['required', 'integer', new TenantOwnershipRule('gudang', 'id_gudang')],
             'tgl_pengajuan' => ['required', 'date'],
             'catatan' => ['nullable', 'string', 'max:5000'],
         ]);

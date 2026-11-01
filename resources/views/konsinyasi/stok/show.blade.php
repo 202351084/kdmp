@@ -10,15 +10,20 @@
             <p class="text-sm text-ink-600">{{ $item->kiriman?->kode_kiriman ?? 'Pengiriman tidak ditemukan' }}</p>
             <h1 class="mt-1 text-2xl font-semibold text-ink-900">{{ $item->barang?->nama_barang ?? 'Barang tidak ditemukan' }}</h1>
         </div>
-        <span class="rounded-full px-3 py-1 text-sm font-medium {{ $item->status === 'aktif' ? 'bg-sawah-100 text-sawah-600' : 'bg-paper-200 text-ink-600' }}">
-            {{ ['aktif' => 'Masih ada', 'habis' => 'Habis', 'dikembalikan' => 'Dikembalikan'][$item->status] ?? $item->status }}
-        </span>
+        <div class="flex items-center gap-3">
+            @if ($item->status === 'aktif')
+                <a href="{{ route('konsinyasi.retur.create', ['stok' => $item->id_stok_konsinyasi]) }}" class="rounded-sm bg-merah-500 px-4 py-2 text-sm font-medium text-paper-50 hover:bg-merah-600">Catat Retur</a>
+            @endif
+            <span class="rounded-full px-3 py-1 text-sm font-medium {{ $item->status === 'aktif' ? 'bg-sawah-100 text-sawah-600' : 'bg-paper-200 text-ink-600' }}">
+                {{ ['aktif' => 'Masih ada', 'habis' => 'Habis', 'dikembalikan' => 'Dikembalikan'][$item->status] ?? $item->status }}
+            </span>
+        </div>
     </div>
 
     <div class="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div class="border-l-4 border-merah-500 bg-paper-50 px-4 py-3">
-            <p class="text-xs font-medium uppercase text-ink-600">Desa Pemilik</p>
-            <p class="mt-1 font-semibold text-ink-900">{{ $item->kiriman?->koperasiPemilik?->nama_entitas ?? '-' }}</p>
+            <p class="text-xs font-medium uppercase text-ink-600">Pemilik</p>
+            <p class="mt-1 font-semibold text-ink-900">{{ $item->kiriman?->jenis_pemilik === 'pihak' ? ($item->kiriman?->pihakPemilik?->nama ?? '-') : ($item->kiriman?->koperasiPemilik?->nama_entitas ?? '-') }}</p>
         </div>
         <div class="border-l-4 border-merah-500 bg-paper-50 px-4 py-3">
             <p class="text-xs font-medium uppercase text-ink-600">Gudang Penerima</p>

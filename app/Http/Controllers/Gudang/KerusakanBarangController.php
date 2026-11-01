@@ -7,6 +7,7 @@ use App\Models\Gudang\KerusakanBarang;
 use App\Models\Gudang\Stok;
 use App\Models\Master\Barang;
 use App\Models\Master\Gudang;
+use App\Rules\TenantOwnershipRule;
 use App\Services\StokService;
 use App\Services\StokBatchService;
 use Illuminate\Http\RedirectResponse;
@@ -103,7 +104,7 @@ class KerusakanBarangController extends ModuleCrudController
     public function store(Request $request): RedirectResponse
     {
         $rules = [
-            'id_gudang' => ['required', 'integer', 'exists:gudang,id_gudang'],
+            'id_gudang' => ['required', 'integer', new TenantOwnershipRule('gudang', 'id_gudang')],
             'id_barang' => ['required', 'integer', 'exists:master_barang,id_barang'],
             'tanggal' => ['required', 'date'],
             'qty' => ['required', 'numeric', 'gt:0'],

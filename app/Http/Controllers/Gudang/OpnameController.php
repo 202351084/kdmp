@@ -7,6 +7,7 @@ use App\Models\Gudang\OpnameDetail;
 use App\Models\Gudang\OpnameHeader;
 use App\Models\Master\Barang;
 use App\Models\Master\Gudang;
+use App\Rules\TenantOwnershipRule;
 use App\Services\StokService;
 use App\Services\StokBatchService;
 use Illuminate\Http\RedirectResponse;
@@ -67,7 +68,7 @@ class OpnameController extends ModuleCrudController
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'id_gudang' => ['required', 'integer', 'exists:gudang,id_gudang'],
+            'id_gudang' => ['required', 'integer', new TenantOwnershipRule('gudang', 'id_gudang')],
             'kode_opname' => ['required', 'string', 'max:30'],
             'tanggal' => ['required', 'date'],
             'items' => ['required', 'array', 'min:1'],

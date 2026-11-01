@@ -29,7 +29,7 @@
                 <thead>
                     <tr class="border-b border-paper-300 bg-paper-200/60 font-mono text-[11px] uppercase tracking-wide text-ink-600/70">
                         <th class="px-4 py-3 font-medium">Barang / Kiriman</th>
-                        <th class="px-4 py-3 font-medium">Desa Pemilik</th>
+                        <th class="px-4 py-3 font-medium">Pemilik</th>
                         <th class="px-4 py-3 text-right font-medium">Dititipkan</th>
                         <th class="px-4 py-3 text-right font-medium">Terjual</th>
                         <th class="px-4 py-3 text-right font-medium">Sisa</th>
@@ -45,7 +45,7 @@
                                 <p class="font-medium text-ink-900">{{ $item->barang?->nama_barang ?? 'Barang tidak ditemukan' }}</p>
                                 <p class="mt-1 text-xs text-ink-600">{{ $item->kiriman?->kode_kiriman ?? '-' }} · {{ $item->kiriman?->gudangTujuan?->nama_gudang ?? 'Gudang penerima' }}</p>
                             </td>
-                            <td class="px-4 py-3 text-ink-800">{{ $item->kiriman?->koperasiPemilik?->nama_entitas ?? 'Desa pemilik tidak ditemukan' }}</td>
+                            <td class="px-4 py-3 text-ink-800">{{ $item->kiriman?->jenis_pemilik === 'pihak' ? ($item->kiriman?->pihakPemilik?->nama ?? 'Penitip tidak ditemukan') : ($item->kiriman?->koperasiPemilik?->nama_entitas ?? 'Desa pemilik tidak ditemukan') }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $item->qty_titip, 4, ',', '.') }} {{ $item->barang?->satuanDasar?->kode_satuan }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $item->qty_terjual, 4, ',', '.') }} {{ $item->barang?->satuanDasar?->kode_satuan }}</td>
                             <td class="px-4 py-3 text-right font-semibold">{{ number_format((float) $item->qty_sisa, 4, ',', '.') }} {{ $item->barang?->satuanDasar?->kode_satuan }}</td>

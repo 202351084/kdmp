@@ -9,6 +9,7 @@ use App\Models\Master\Barang;
 use App\Models\Master\KasBank;
 use App\Models\Master\Pihak;
 use App\Models\Master\UnitUsaha;
+use App\Rules\TenantOwnershipRule;
 use App\Services\PembelianService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -119,7 +120,12 @@ class PembelianController extends ModuleCrudController
                     Rule::requiredIf($request->input('jenis_pembayaran') === 'kredit'),
                 ],
                 'id_unit_usaha' => ['exclude_unless:source,quick_purchase', 'required', 'exists:master_unit_usaha,id_unit_usaha'],
-                'id_gudang' => ['exclude_unless:source,quick_purchase', 'required', 'exists:gudang,id_gudang'],
+                'id_gudang' => [
+                    'exclude_unless:source,quick_purchase',
+                    'required',
+                    'integer',
+                    new TenantOwnershipRule('gudang', 'id_gudang'),
+                ],
                 'items' => ['exclude_unless:source,quick_purchase', 'required', 'array', 'min:1'],
                 'items.*.id_barang' => ['required', 'exists:master_barang,id_barang'],
                 'items.*.id_satuan' => ['required', 'exists:satuan,id'],
@@ -261,7 +267,7 @@ class PembelianController extends ModuleCrudController
                 Rule::requiredIf($request->input('jenis_pembayaran') === 'kredit'),
             ],
             'id_unit_usaha' => 'nullable|exists:master_unit_usaha,id_unit_usaha',
-            'id_gudang' => 'nullable|exists:gudang,id_gudang',
+            'id_gudang' => ['nullable', 'integer', new TenantOwnershipRule('gudang', 'id_gudang')],
             'items' => 'required|array|min:1',
             'items.*.id_barang' => 'required|exists:master_barang,id_barang',
             'items.*.id_satuan' => 'required|exists:satuan,id',
@@ -334,5 +340,4 @@ class PembelianController extends ModuleCrudController
         return redirect()->route('pembelian.retur.index');
     }
 }
-
 

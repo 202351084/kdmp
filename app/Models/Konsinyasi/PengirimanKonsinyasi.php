@@ -3,6 +3,7 @@
 namespace App\Models\Konsinyasi;
 
 use App\Models\Master\Gudang;
+use App\Models\Master\Pihak;
 use App\Models\Tenant\Entitas;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,8 +17,9 @@ class PengirimanKonsinyasi extends Model
     protected $primaryKey = 'id_kiriman';
 
     protected $fillable = [
-        'kode_kiriman', 'id_penawaran_barter', 'id_entitas_pemilik', 'id_entitas_penerima',
-        'id_gudang_asal', 'id_gudang_tujuan', 'tgl_kirim', 'tgl_terima', 'tgl_batas_titip',
+        'kode_kiriman', 'id_penawaran_barter', 'jenis_pemilik', 'id_entitas_pemilik',
+        'id_pihak_pemilik', 'id_entitas_penerima', 'id_gudang_asal', 'alamat_asal',
+        'id_gudang_tujuan', 'tgl_kirim', 'tgl_terima', 'tgl_batas_titip',
         'model_imbalan', 'persen_komisi', 'penanggung_susut', 'total_nilai_titip',
         'total_hpp_pemilik', 'status', 'status_posting', 'id_jurnal_kirim',
         'catatan_pengiriman', 'catatan_penerimaan',
@@ -43,6 +45,11 @@ class PengirimanKonsinyasi extends Model
     public function koperasiPenerima()
     {
         return $this->belongsTo(Entitas::class, 'id_entitas_penerima', 'id_entitas');
+    }
+
+    public function pihakPemilik()
+    {
+        return $this->belongsTo(Pihak::class, 'id_pihak_pemilik', 'id_pihak')->withoutGlobalScopes();
     }
 
     public function gudangAsal()
@@ -100,6 +107,5 @@ class PengirimanKonsinyasi extends Model
         $query->where('id_entitas_penerima', app('entitas_aktif'));
     }
 }
-
 
 

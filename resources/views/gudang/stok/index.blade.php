@@ -31,7 +31,6 @@
                     <th class="px-4 py-3 font-medium">Gudang</th>
                     <th class="px-4 py-3 font-medium">Barang</th>
                     <th class="px-4 py-3 text-right font-medium">Tersedia</th>
-                    <th class="px-4 py-3 text-right font-medium">Total Koperasi</th>
                     <th class="px-4 py-3 text-center font-medium">Status</th>
                     <th class="px-4 py-3 text-right font-medium">Nilai Persediaan</th>
                 </tr>
@@ -40,7 +39,6 @@
                 @forelse ($items as $item)
                     @php
                         $qtyTersedia = (float) $item->qty_on_hand - (float) $item->qty_reserved;
-                        $qtyTersediaKoperasi = (float) ($item->qty_tersedia_koperasi ?? 0);
                         $qtyDipesan = (float) $item->qty_reserved;
                         $stokMinimum = $item->stok_minimum;
                         $satuan = $item->barang->satuanDasar->kode_satuan ?? '';
@@ -58,14 +56,9 @@
                             <span class="mt-1 block text-xs text-ink-600/60">
                                 Dipesan: {{ rtrim(rtrim(number_format($qtyDipesan, 4, ',', '.'), '0'), ',') }} {{ $satuan }}
                             </span>
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            <span class="font-medium text-ink-800">
-                                {{ rtrim(rtrim(number_format($qtyTersediaKoperasi, 4, ',', '.'), '0'), ',') }} {{ $satuan }}
-                            </span>
                             <span class="mt-1 block text-xs text-ink-600/60">
                                 @if ($stokMinimum !== null && bccomp((string) $stokMinimum, '0', 4) > 0)
-                                    Minimum: {{ rtrim(rtrim(number_format((float) $stokMinimum, 4, ',', '.'), '0'), ',') }} {{ $satuan }}
+                                    Minimum entitas: {{ rtrim(rtrim(number_format((float) $stokMinimum, 4, ',', '.'), '0'), ',') }} {{ $satuan }}
                                 @else
                                     Minimum belum diatur
                                 @endif
@@ -87,7 +80,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-10 text-center text-sm text-ink-600/60">
+                        <td colspan="5" class="px-4 py-10 text-center text-sm text-ink-600/60">
                             Belum ada stok. Jalankan penerimaan barang terlebih dahulu.
                         </td>
                     </tr>

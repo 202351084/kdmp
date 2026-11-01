@@ -188,12 +188,12 @@
                     <div>
                         <h4 class="font-semibold text-sawah-700 text-sm">Status Surplus Terdeteksi: Potensi Pasokan Mitra Desa</h4>
                         <p class="mt-0.5 text-xs text-ink-700">
-                            Komoditas ini memiliki kelebihan pasokan sebesar <strong>+{{ number_format((float) $hasil->selisih, 2, ',', '.') }} {{ $satuan }}</strong>. Potensi surplus ini dapat disalurkan melalui Konsinyasi Antar Desa (M7) atau Marketplace KBR.
+                            Komoditas ini memiliki kelebihan pasokan sebesar <strong>+{{ number_format((float) $hasil->selisih, 2, ',', '.') }} {{ $satuan }}</strong>. Jika akan dititipkan ke desa lain, catat melalui pengiriman konsinyasi.
                         </p>
                     </div>
-                    <a href="{{ route('konsinyasi.marketplace.index') }}"
+                    <a href="{{ route('konsinyasi.pengiriman.create') }}"
                        class="rounded-sm border border-sawah-600 bg-sawah-600 px-4 py-2 text-xs font-semibold text-paper-50 hover:bg-sawah-700">
-                        Lihat Marketplace Konsinyasi (M7) &rarr;
+                        Buat Pengiriman Konsinyasi &rarr;
                     </a>
                 </div>
             @else

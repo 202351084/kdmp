@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Konsinyasi;
 use App\Http\Controllers\Concerns\ModuleCrudController;
 use App\Models\Master\Barang;
 use App\Models\Master\Gudang;
+use App\Models\Master\Pihak;
 use App\Models\Konsinyasi\PengirimanKonsinyasi;
 use App\Models\Konsinyasi\PengirimanKonsinyasiDetail;
 use App\Models\Tenant\Entitas;
@@ -24,7 +25,7 @@ class PengirimanKonsinyasiController extends ModuleCrudController
     protected string $view = 'konsinyasi.pengiriman';
     protected string $title = 'Pengiriman Konsinyasi';
     protected string $routeBase = 'konsinyasi.pengiriman';
-    protected array $withRelations = ['koperasiPemilik', 'koperasiPenerima'];
+    protected array $withRelations = ['koperasiPemilik', 'pihakPemilik', 'koperasiPenerima'];
 
     protected function canEdit(Model $item): bool
     {
@@ -54,15 +55,22 @@ class PengirimanKonsinyasiController extends ModuleCrudController
 
     private function formOptions(): array
     {
+        $entitas = Entitas::query()->where('is_active', true)->orderBy('nama_entitas')->get();
         $gudang = Gudang::query()
             ->withoutGlobalScopes()
             ->where('is_active', true)
             ->orderBy('nama_gudang')
             ->get();
+        $pihak = Pihak::query()
+            ->where('is_active', true)
+            ->whereIn('jenis_pihak', ['warga', 'petani'])
+            ->orderBy('nama')
+            ->get();
 
         return [
-            'entitas' => Entitas::query()->where('is_active', true)->orderBy('nama_entitas')->get(),
+            'entitas' => $entitas,
             'gudang' => $gudang,
+            'pihak' => $pihak,
             'gudangData' => $gudang->map(function ($item) {
                 return [
                     'id' => $item->id_gudang,
@@ -77,14 +85,17 @@ class PengirimanKonsinyasiController extends ModuleCrudController
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validateData($request);
-        $this->validateGudangOwnership($data);
+        $this->validateOwnership($data);
 
         $idKiriman = DB::transaction(function () use ($data): int {
             $kiriman = PengirimanKonsinyasi::query()->create([
                 'kode_kiriman' => $data['kode_kiriman'],
-                'id_entitas_pemilik' => $data['id_entitas_pemilik'],
+                'jenis_pemilik' => $data['jenis_pemilik'],
+                'id_entitas_pemilik' => $data['id_entitas_pemilik'] ?? null,
+                'id_pihak_pemilik' => $data['id_pihak_pemilik'] ?? null,
                 'id_entitas_penerima' => $data['id_entitas_penerima'],
-                'id_gudang_asal' => $data['id_gudang_asal'],
+                'id_gudang_asal' => $data['id_gudang_asal'] ?? null,
+                'alamat_asal' => $data['alamat_asal'] ?? null,
                 'id_gudang_tujuan' => $data['id_gudang_tujuan'],
                 'tgl_kirim' => $data['tgl_kirim'],
                 'tgl_batas_titip' => $data['tgl_batas_titip'] ?? null,
@@ -108,7 +119,7 @@ class PengirimanKonsinyasiController extends ModuleCrudController
     public function update(Request $request, int|string $id): RedirectResponse
     {
         $data = $this->validateData($request, (int) $id);
-        $this->validateGudangOwnership($data);
+        $this->validateOwnership($data);
 
         $updated = DB::transaction(function () use ($data, $id): bool {
             $kiriman = PengirimanKonsinyasi::query()
@@ -122,9 +133,12 @@ class PengirimanKonsinyasiController extends ModuleCrudController
 
             $kiriman->update([
                 'kode_kiriman' => $data['kode_kiriman'],
-                'id_entitas_pemilik' => $data['id_entitas_pemilik'],
+                'jenis_pemilik' => $data['jenis_pemilik'],
+                'id_entitas_pemilik' => $data['id_entitas_pemilik'] ?? null,
+                'id_pihak_pemilik' => $data['id_pihak_pemilik'] ?? null,
                 'id_entitas_penerima' => $data['id_entitas_penerima'],
-                'id_gudang_asal' => $data['id_gudang_asal'],
+                'id_gudang_asal' => $data['id_gudang_asal'] ?? null,
+                'alamat_asal' => $data['alamat_asal'] ?? null,
                 'id_gudang_tujuan' => $data['id_gudang_tujuan'],
                 'tgl_kirim' => $data['tgl_kirim'],
                 'tgl_batas_titip' => $data['tgl_batas_titip'] ?? null,
@@ -158,11 +172,14 @@ class PengirimanKonsinyasiController extends ModuleCrudController
         }
 
         return $request->validate([
+            'jenis_pemilik' => ['required', 'in:entitas,pihak'],
             'kode_kiriman' => ['required', 'string', 'max:30', $kodeKirimanRule],
-            'id_entitas_pemilik' => ['required', 'integer', 'exists:entitas,id_entitas', 'different:id_entitas_penerima'],
+            'id_entitas_pemilik' => ['exclude_unless:jenis_pemilik,entitas', 'required', 'integer', 'exists:entitas,id_entitas', 'different:id_entitas_penerima'],
+            'id_pihak_pemilik' => ['exclude_unless:jenis_pemilik,pihak', 'required', 'integer', 'exists:master_pihak,id_pihak'],
             'id_entitas_penerima' => ['required', 'integer', 'exists:entitas,id_entitas'],
-            'id_gudang_asal' => ['required', 'integer', 'exists:gudang,id_gudang'],
-            'id_gudang_tujuan' => ['required', 'integer', 'exists:gudang,id_gudang', 'different:id_gudang_asal'],
+            'id_gudang_asal' => ['exclude_unless:jenis_pemilik,entitas', 'required', 'integer', 'exists:gudang,id_gudang'],
+            'alamat_asal' => ['nullable', 'string', 'max:2000'],
+            'id_gudang_tujuan' => ['required', 'integer', 'exists:gudang,id_gudang'],
             'tgl_kirim' => ['required', 'date'],
             'tgl_batas_titip' => ['nullable', 'date', 'after_or_equal:tgl_kirim'],
             'model_imbalan' => ['required', 'in:selisih_harga,komisi_persen'],
@@ -175,28 +192,55 @@ class PengirimanKonsinyasiController extends ModuleCrudController
             'items.*.harga_titip_satuan' => ['required', 'numeric', 'gte:0'],
             'items.*.harga_jual_saran' => ['nullable', 'numeric', 'gte:0'],
         ], [
-            'id_gudang_tujuan.different' => 'Gudang tujuan harus berbeda dari gudang asal.',
             'id_entitas_pemilik.different' => 'Desa pemilik dan desa penerima harus berbeda.',
         ]);
     }
 
-    private function validateGudangOwnership(array $data): void
+    private function validateOwnership(array $data): void
     {
-        $gudang = Gudang::query()
+        $gudangTujuan = Gudang::query()
             ->withoutGlobalScopes()
-            ->whereIn('id_gudang', [$data['id_gudang_asal'], $data['id_gudang_tujuan']])
-            ->get()
-            ->keyBy('id_gudang');
+            ->where('id_gudang', $data['id_gudang_tujuan'])
+            ->first();
 
-        if ((int) $gudang[$data['id_gudang_asal']]->id_entitas !== (int) $data['id_entitas_pemilik']) {
+        if (! $gudangTujuan || (int) $gudangTujuan->id_entitas !== (int) $data['id_entitas_penerima']) {
+            throw ValidationException::withMessages([
+                'id_gudang_tujuan' => 'Gudang tujuan harus milik desa penerima.',
+            ]);
+        }
+
+        if ($data['jenis_pemilik'] === 'pihak') {
+            $pihakValid = Pihak::query()
+                ->withoutGlobalScopes()
+                ->where('id_pihak', $data['id_pihak_pemilik'])
+                ->where('id_entitas', $data['id_entitas_penerima'])
+                ->where('is_active', true)
+                ->whereIn('jenis_pihak', ['warga', 'petani'])
+                ->exists();
+
+            if (! $pihakValid) {
+                throw ValidationException::withMessages([
+                    'id_pihak_pemilik' => 'Penitip harus berupa warga atau petani aktif yang terdaftar pada desa penerima.',
+                ]);
+            }
+
+            return;
+        }
+
+        $gudangAsal = Gudang::query()
+            ->withoutGlobalScopes()
+            ->where('id_gudang', $data['id_gudang_asal'])
+            ->first();
+
+        if (! $gudangAsal || (int) $gudangAsal->id_entitas !== (int) $data['id_entitas_pemilik']) {
             throw ValidationException::withMessages([
                 'id_gudang_asal' => 'Gudang asal harus milik desa pemilik.',
             ]);
         }
 
-        if ((int) $gudang[$data['id_gudang_tujuan']]->id_entitas !== (int) $data['id_entitas_penerima']) {
+        if ((int) $data['id_entitas_pemilik'] === (int) $data['id_entitas_penerima']) {
             throw ValidationException::withMessages([
-                'id_gudang_tujuan' => 'Gudang tujuan harus milik desa penerima.',
+                'id_entitas_pemilik' => 'Desa pemilik dan desa penerima harus berbeda.',
             ]);
         }
     }
@@ -221,7 +265,7 @@ class PengirimanKonsinyasiController extends ModuleCrudController
     {
         return view('konsinyasi.pengiriman.show', [
             'item' => PengirimanKonsinyasi::query()
-                ->with(['koperasiPemilik', 'koperasiPenerima', 'gudangAsal', 'gudangTujuan', 'detail.barang.satuanDasar'])
+                ->with(['koperasiPemilik', 'pihakPemilik', 'koperasiPenerima', 'gudangAsal', 'gudangTujuan', 'detail.barang.satuanDasar'])
                 ->findOrFail($id),
             'title' => 'Detail Pengiriman Konsinyasi',
         ]);

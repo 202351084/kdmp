@@ -49,6 +49,7 @@
             'match' => 'gudang.*',
             'items' => [
                 ['label' => 'Dashboard Gudang', 'route' => 'gudang.index', 'match' => 'gudang.index'],
+                ['label' => 'Pencocokan Surplus-Defisit', 'route' => 'gudang.pencocokan-surplus-defisit.index', 'match' => 'gudang.pencocokan-surplus-defisit.*'],
                 ['label' => 'Posisi Stok', 'route' => 'gudang.stok.index', 'match' => 'gudang.stok.*'],
                 ['label' => 'Penerimaan', 'route' => 'gudang.penerimaan.index', 'match' => 'gudang.penerimaan.*'],
                 ['label' => 'Batch & Kedaluwarsa', 'route' => 'gudang.batch.index', 'match' => 'gudang.batch.*'],
@@ -69,13 +70,13 @@
             ]
         ],
         [
-            'title' => 'Konsinyasi Antar Desa',
+            'title' => 'Konsinyasi & Titipan',
             'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>',
             'match' => 'konsinyasi.*',
             'items' => [
-                ['label' => 'Marketplace', 'route' => 'konsinyasi.marketplace.index', 'match' => 'konsinyasi.marketplace.*'],
                 ['label' => 'Pengiriman', 'route' => 'konsinyasi.pengiriman.index', 'match' => 'konsinyasi.pengiriman.*'],
                 ['label' => 'Stok Konsinyasi', 'route' => 'konsinyasi.stok.index', 'match' => 'konsinyasi.stok.*'],
+                ['label' => 'Retur Konsinyasi', 'route' => 'konsinyasi.retur.index', 'match' => 'konsinyasi.retur.*'],
                 ['label' => 'Rekonsiliasi', 'route' => 'konsinyasi.rekonsiliasi.index', 'match' => 'konsinyasi.rekonsiliasi.*'],
                 ['label' => 'Setoran', 'route' => 'konsinyasi.setoran.index', 'match' => 'konsinyasi.setoran.*'],
             ]
