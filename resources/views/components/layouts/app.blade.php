@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Dashboard' }} &mdash; Ngobar</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,13 +15,13 @@
     <div class="flex h-full overflow-hidden">
         
         {{-- Sidebar Component --}}
-        <div x-show="sidebarOpen" x-transition.opacity class="shrink-0 transition-all duration-300">
+        <div x-show="sidebarOpen" x-transition.opacity class="shrink-0 transition-all duration-300 print:hidden">
             <x-sidebar />
         </div>
 
         <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
             {{-- Top Navbar --}}
-            <header class="sticky top-0 z-40 flex items-center justify-between border-b border-paper-200 bg-white px-6 py-3 shadow-sm">
+            <header class="sticky top-0 z-40 flex items-center justify-between border-b border-paper-200 bg-white px-6 py-3 shadow-sm print:hidden">
                 <div class="flex items-center gap-4">
                     <button @click="sidebarOpen = !sidebarOpen" class="text-paper-500 hover:text-ink-900 focus:outline-none">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>

@@ -24,8 +24,12 @@ class LaporanM2Controller extends Controller
 
         $tahun = (int) $request->query('tahun', 2026);
         $bulanQuery = $request->query('bulan');
-        $periode = $request->query('periode');
-        $bulan = $periode ? PeriodeKalkulasi::detail($periode)['bulan_awal'] : ($bulanQuery ? (int) $bulanQuery : null);
+        $validatedQuery = $request->validate([
+            'periode' => ['nullable', 'in:ganjil,genap'],
+        ]);
+        $periode = $validatedQuery['periode'] ?? 'ganjil';
+        $detailPeriode = PeriodeKalkulasi::detail($periode);
+        $bulan = $bulanQuery ? (int) $bulanQuery : null;
         $kategori = $request->query('kategori');
         $status = $request->query('status');
 
@@ -35,6 +39,8 @@ class LaporanM2Controller extends Controller
 
         if ($bulan !== null) {
             $query->where('bulan', $bulan);
+        } else {
+            $query->whereIn('bulan', $detailPeriode['bulan']);
         }
 
         if (!empty($kategori)) {

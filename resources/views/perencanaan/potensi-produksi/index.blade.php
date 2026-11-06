@@ -81,7 +81,7 @@
             <a href="{{ route('survei.sesi.index') }}"
                class="inline-flex items-center gap-1.5 rounded-sm border border-paper-300 bg-paper-100 px-3 py-2 text-xs font-medium text-ink-700 hover:border-merah-400">
                 <span>🌾</span>
-                <span>Survei Panen (M1)</span>
+                <span>Survei Panen</span>
             </a>
 
             <button type="button"
@@ -184,7 +184,7 @@
                         <td class="px-5 py-3.5 text-xs text-ink-600">
                             @if ($item->sesiSurvei)
                                 <a href="{{ route('survei.sesi.show', $item->id_sesi_survei) }}" class="inline-flex items-center gap-1 text-merah-600 hover:underline">
-                                    <span>M1 Sesi #{{ $item->id_sesi_survei }}</span>
+                                    <span>Survei Sesi #{{ $item->id_sesi_survei }}</span>
                                     <span>&rarr;</span>
                                 </a>
                             @else
@@ -194,7 +194,7 @@
                         <td class="px-5 py-3.5 text-right">
                             <div class="inline-flex items-center gap-1.5">
                                 <button type="button"
-                                        onclick="openEditModal({{ $item->id }}, '{{ addslashes($item->komoditas?->nama ?? '') }}', {{ $item->bulan }}, {{ (float)$item->jumlah_produksi }}, '{{ $item->satuan }}')"
+                                        onclick="openEditModal({{ $item->id }}, '{{ addslashes($item->komoditas?->nama ?? '') }}', '{{ $item->komoditas?->kategori ?? 'pertanian' }}', {{ $item->bulan }}, {{ (float)$item->jumlah_produksi }}, '{{ $item->satuan }}')"
                                         class="rounded-sm border border-paper-300 px-2.5 py-1 text-xs font-medium text-ink-700 hover:border-merah-400 hover:text-merah-600">
                                     Ubah
                                 </button>
@@ -213,7 +213,7 @@
                     <tr>
                         <td colspan="7" class="px-5 py-10 text-center text-xs text-ink-600/70">
                             <p class="font-medium text-ink-800">Belum ada catatan potensi panen untuk filter ini.</p>
-                            <p class="mt-1">Gunakan tombol "+ Catat Potensi Panen" di atas atau sinkronkan hasil survei dari Modul M1.</p>
+                            <p class="mt-1">Gunakan tombol "+ Catat Potensi Panen" di atas atau sinkronkan hasil survei.</p>
                         </td>
                     </tr>
                 @endforelse
@@ -259,12 +259,31 @@
 
                 <div>
                     <label class="block font-mono text-xs text-ink-700">Komoditas:</label>
-                    <select name="id_komoditas" required class="mt-1 w-full rounded-sm border border-paper-300 bg-paper-100 px-3 py-2 text-xs font-medium focus:border-merah-400 focus:outline-none">
+                    <select id="potensi-komoditas" name="id_komoditas" required class="mt-1 w-full rounded-sm border border-paper-300 bg-paper-100 px-3 py-2 text-xs font-medium focus:border-merah-400 focus:outline-none">
                         <option value="">-- Pilih Komoditas --</option>
                         @foreach ($daftarKomoditas as $k)
                             <option value="{{ $k->id }}">{{ $k->nama }} ({{ $k->kategori }})</option>
                         @endforeach
                     </select>
+                    <button type="button" onclick="openKomoditasBaru()" class="mt-2 text-xs font-semibold text-merah-600 hover:underline">
+                        + Komoditas Baru
+                    </button>
+                    <div id="komoditas-baru" class="mt-2 hidden rounded-sm border border-paper-200 bg-paper-100 p-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input id="komoditas-baru-nama" type="text" maxlength="150" placeholder="Nama komoditas"
+                                   class="rounded-sm border border-paper-300 bg-paper-50 px-2 py-2 text-xs">
+                            <select id="komoditas-baru-kategori" class="rounded-sm border border-paper-300 bg-paper-50 px-2 py-2 text-xs">
+                                <option value="pertanian">Pertanian</option>
+                                <option value="perkebunan">Perkebunan</option>
+                                <option value="peternakan">Peternakan</option>
+                                <option value="perikanan">Perikanan</option>
+                            </select>
+                        </div>
+                        <button type="button" onclick="simpanKomoditasBaru()" class="mt-2 rounded-sm bg-sawah-600 px-3 py-2 text-xs font-semibold text-paper-50">
+                            Simpan &amp; Pilih Komoditas
+                        </button>
+                        <p id="komoditas-baru-error" class="mt-2 hidden text-xs text-merah-600"></p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -318,6 +337,17 @@
                 </div>
 
                 <div>
+                    <label class="block font-mono text-xs text-ink-700">Sektor:</label>
+                    <select name="kategori" id="edit-kategori" required
+                            class="mt-1 w-full rounded-sm border border-paper-300 bg-paper-100 px-3 py-2 text-xs font-medium focus:border-merah-400 focus:outline-none">
+                        <option value="pertanian">Pertanian</option>
+                        <option value="perkebunan">Perkebunan</option>
+                        <option value="peternakan">Peternakan</option>
+                        <option value="perikanan">Perikanan</option>
+                    </select>
+                </div>
+
+                <div>
                     <label class="block font-mono text-xs text-ink-700">Jumlah Panen:</label>
                     <input type="number" step="0.0001" min="0" name="jumlah_produksi" id="edit-jumlah-produksi" required
                            class="mt-1 w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 font-mono text-sm font-semibold focus:border-merah-400 focus:outline-none">
@@ -348,7 +378,50 @@
             document.getElementById('modal-tambah').classList.remove('hidden');
         }
 
-        function openEditModal(id, namaKomoditas, bulan, jumlah, satuan) {
+        function openKomoditasBaru() {
+            document.getElementById('komoditas-baru').classList.toggle('hidden');
+            document.getElementById('komoditas-baru-nama').focus();
+        }
+
+        async function simpanKomoditasBaru() {
+            const nama = document.getElementById('komoditas-baru-nama').value.trim();
+            const kategori = document.getElementById('komoditas-baru-kategori').value;
+            const error = document.getElementById('komoditas-baru-error');
+            error.classList.add('hidden');
+            if (!nama) {
+                error.textContent = 'Nama komoditas wajib diisi.';
+                error.classList.remove('hidden');
+                return;
+            }
+
+            const response = await fetch('{{ route('perencanaan.potensi-produksi.komoditas.store') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ nama, kategori })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                error.textContent = data.message || 'Komoditas gagal disimpan.';
+                error.classList.remove('hidden');
+                return;
+            }
+
+            const select = document.getElementById('potensi-komoditas');
+            let option = Array.from(select.options).find(item => item.value === String(data.id));
+            if (!option) {
+                option = new Option(`${data.nama} (${data.kategori})`, data.id);
+                select.add(option);
+            }
+            select.value = data.id;
+            document.getElementById('komoditas-baru').classList.add('hidden');
+            document.getElementById('komoditas-baru-nama').value = '';
+        }
+
+        function openEditModal(id, namaKomoditas, kategori, bulan, jumlah, satuan) {
             const form = document.getElementById('form-edit');
             form.action = "{{ url('perencanaan/potensi-produksi') }}/" + id;
             const namaBulanMap = {
@@ -357,6 +430,7 @@
                 9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
             };
             document.getElementById('edit-nama-komoditas').value = namaKomoditas + ' (' + (namaBulanMap[bulan] || 'Bulan ' + bulan) + ')';
+            document.getElementById('edit-kategori').value = kategori;
             document.getElementById('edit-jumlah-produksi').value = jumlah;
             document.getElementById('edit-satuan').value = satuan;
             document.getElementById('modal-edit').classList.remove('hidden');

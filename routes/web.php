@@ -103,6 +103,8 @@ Route::middleware('auth')->group(function () {
         Route::get('dashboard', [DashboardM2Controller::class, 'index'])->name('dashboard');
         Route::resource('demografi', DemografiController::class);
         Route::resource('potensi-produksi', PotensiProduksiController::class);
+        Route::post('potensi-produksi/komoditas', [PotensiProduksiController::class, 'storeKomoditas'])
+            ->name('potensi-produksi.komoditas.store');
         Route::resource('standar-kebutuhan', StandarKebutuhanController::class);
         Route::post('kebutuhan-komoditas/kalkulasi', [KebutuhanKomoditasController::class, 'kalkulasi'])
             ->name('kebutuhan-komoditas.kalkulasi');
@@ -110,6 +112,8 @@ Route::middleware('auth')->group(function () {
             ->only(['index', 'show']);
         Route::resource('neraca-komoditas', NeracaKomoditasController::class)
             ->only(['index', 'show']);
+        Route::post('neraca-komoditas/{hasil}/ajukan-ke-gudang', [NeracaKomoditasController::class, 'ajukanKeGudang'])
+            ->name('neraca-komoditas.ajukan-ke-gudang');
         Route::get('laporan', [LaporanM2Controller::class, 'index'])->name('laporan.index');
         Route::resource('perbandingan-harga', PerbandinganHargaController::class);
         Route::get('permintaan-pengadaan/from-hasil/{hasil}', [PermintaanPengadaanController::class, 'fromHasil'])

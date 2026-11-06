@@ -249,6 +249,15 @@
                                        title="Buat Draft Permintaan Pengadaan untuk menutupi kekurangan komoditas ini">
                                         <span>Buat Permintaan Pengadaan</span>
                                     </a>
+                                @elseif ($item->status_surplus_defisit === 'surplus')
+                                    <form method="POST" action="{{ route('perencanaan.neraca-komoditas.ajukan-ke-gudang', ['hasil' => $item->id_hasil]) }}">
+                                        @csrf
+                                        <button type="submit"
+                                                class="inline-flex items-center gap-1 rounded-sm border border-sawah-600 bg-sawah-600 px-2.5 py-1 text-xs font-semibold text-paper-50 shadow-xs hover:bg-sawah-700"
+                                                title="Buat pengajuan penerimaan surplus ke gudang">
+                                            Ajukan ke Gudang
+                                        </button>
+                                    </form>
                                 @endif
                             </div>
                         </td>

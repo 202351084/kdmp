@@ -45,6 +45,29 @@ class DashboardM2Controller extends Controller
         }
 
         $daftarHasil = (clone $queryHasil)->orderBy('id_komoditas')->get();
+        $distribusiNeraca = $daftarHasil
+            ->groupBy(fn (HasilKalkulasi $hasil): string => in_array($hasil->komoditas?->kategori, ['pertanian', 'perkebunan', 'peternakan'], true)
+                ? (string) $hasil->komoditas->kategori
+                : 'lainnya')
+            ->sortKeys()
+            ->map(function ($hasilSektor) {
+                return $hasilSektor
+                    ->groupBy('id_komoditas')
+                    ->map(function ($periodeKomoditas) {
+                        $terbaru = $periodeKomoditas->sortByDesc(fn (HasilKalkulasi $hasil): string => sprintf('%04d-%02d', $hasil->tahun, $hasil->bulan))->first();
+
+                        return [
+                            'komoditas' => $terbaru->komoditas,
+                            'items' => $periodeKomoditas->sortByDesc('bulan')->values(),
+                            'total_kebutuhan' => (float) $periodeKomoditas->sum('total_kebutuhan'),
+                            'total_ketersediaan' => (float) $periodeKomoditas->sum('total_ketersediaan'),
+                            'status_count' => $periodeKomoditas->countBy('status_surplus_defisit'),
+                            'status_terbaru' => $terbaru->status_surplus_defisit,
+                        ];
+                    })
+                    ->sortBy(fn (array $komoditas): string => $komoditas['komoditas']?->nama ?? '')
+                    ->values();
+            });
 
         // 1. Ringkasan Status Komoditas
         $totalKomoditasTerhitung = $daftarHasil->count();
@@ -65,7 +88,7 @@ class DashboardM2Controller extends Controller
             ->take(5)
             ->values();
 
-        // 3. Sumber Data M1: Demografi
+        // 3. Sumber data survei: demografi
         $dataDemografi = DemografiDesa::where('id_wilayah', $idWilayah)
             ->where('tahun', $tahun)
             ->get();
@@ -81,7 +104,7 @@ class DashboardM2Controller extends Controller
             'lansia' => $dataDemografi->where('kelompok_umur', 'lansia')->sum('jumlah_penduduk'),
         ];
 
-        // 4. Sumber Data M1: Potensi Produksi Panen
+        // 4. Sumber data survei: potensi produksi panen
         $jumlahCatatanProduksi = KetersediaanKomoditas::where('id_wilayah', $idWilayah)
             ->where('tahun', $tahun)
             ->when($bulan, fn ($q) => $q->where('bulan', $bulan))
@@ -97,7 +120,7 @@ class DashboardM2Controller extends Controller
         $waktuKalkulasiTerakhir = $kalkulasiTerakhir?->created_at;
         $versiAktif = $kalkulasiTerakhir?->versi ?? 1;
 
-        // Sesi Survei M1 Terakhir untuk Wilayah Ini
+        // Sesi survei terakhir untuk wilayah ini
         $sesiSurveiTerakhir = SesiSurvei::where('id_wilayah', $idWilayah)
             ->latest('tanggal_survei')
             ->first();
@@ -122,6 +145,7 @@ class DashboardM2Controller extends Controller
             'periode' => $periode,
             'kategori' => $kategori,
             'daftarHasil' => $daftarHasil,
+            'distribusiNeraca' => $distribusiNeraca,
             'totalKomoditasTerhitung' => $totalKomoditasTerhitung,
             'totalSurplus' => $totalSurplus,
             'totalDefisit' => $totalDefisit,

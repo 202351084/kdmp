@@ -17,5 +17,9 @@ class DatabaseSeeder extends Seeder
             M3PerencanaanSeeder::class,
             KonsinyasiDemoSeeder::class,
         ]);
+
+        if (! $this->app->environment('testing')) {
+            $this->call(PerencanaanDemoSeeder::class);
+        }
     }
 }

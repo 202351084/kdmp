@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class PotensiProduksiController extends Controller
 {
@@ -111,6 +112,27 @@ class PotensiProduksiController extends Controller
         ])->with('status', "Data potensi produksi panen {$namaBulan} {$validated['tahun']} berhasil disimpan.");
     }
 
+    public function storeKomoditas(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'nama' => ['required', 'string', 'max:150'],
+            'kategori' => ['required', 'in:pertanian,perkebunan,peternakan,perikanan'],
+        ]);
+
+        $nama = trim($validated['nama']);
+        $komoditas = Komoditas::firstOrCreate(
+            ['nama' => $nama],
+            ['kategori' => $validated['kategori'], 'is_active' => true]
+        );
+
+        return response()->json([
+            'id' => $komoditas->id,
+            'nama' => $komoditas->nama,
+            'kategori' => $komoditas->kategori,
+            'created' => $komoditas->wasRecentlyCreated,
+        ], $komoditas->wasRecentlyCreated ? 201 : 200);
+    }
+
     public function update(Request $request, int|string $id): RedirectResponse
     {
         $idWilayah = $this->wilayahAktifId();
@@ -119,12 +141,14 @@ class PotensiProduksiController extends Controller
         $validated = $request->validate([
             'jumlah_produksi' => ['required', 'numeric', 'min:0'],
             'satuan' => ['required', 'string', 'max:20'],
+            'kategori' => ['required', 'in:pertanian,perkebunan,peternakan,perikanan'],
         ]);
 
         $record->update([
             'jumlah_produksi' => (float) $validated['jumlah_produksi'],
             'satuan' => strtoupper(trim($validated['satuan'])),
         ]);
+        $record->komoditas()->update(['kategori' => $validated['kategori']]);
 
         return back()->with('status', "Data produksi panen komoditas " . ($record->komoditas?->nama ?? '') . " berhasil diperbarui.");
     }
@@ -140,4 +164,3 @@ class PotensiProduksiController extends Controller
         return back()->with('status', "Catatan potensi panen {$namaKomoditas} berhasil dihapus.");
     }
 }
-
