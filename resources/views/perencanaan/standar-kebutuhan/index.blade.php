@@ -137,37 +137,50 @@
             <p class="text-xs text-ink-600">Koefisien digunakan oleh service kalkulasi untuk menghitung volume konsumsi bulanan warga desa berdasarkan kelompok umur.</p>
         </div>
 
-        <table class="w-full text-left text-sm">
-            <thead>
-                <tr class="border-b border-paper-300 bg-paper-200/70 font-mono text-[11px] uppercase tracking-wide text-ink-600/80">
-                    <th class="px-5 py-3 font-medium">Komoditas</th>
-                    <th class="px-5 py-3 font-medium">Sektor</th>
-                    <th class="px-5 py-3 font-medium">Kelompok Umur</th>
-                    <th class="px-5 py-3 text-right font-medium">Per Kapita Standar</th>
-                    <th class="px-5 py-3 font-medium">Satuan / Periode</th>
-                    <th class="px-5 py-3 font-medium">Sumber Acuan</th>
-                    <th class="px-5 py-3 font-medium">Masa Berlaku</th>
-                    <th class="px-5 py-3 text-right font-medium">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($items as $item)
-                    @php
-                        $kuMeta = $deskripsiUmur[$item->kelompok_umur] ?? ['label' => ucfirst($item->kelompok_umur), 'badge' => 'bg-paper-200 text-ink-800'];
-                        $isAktif = (!$item->berlaku_sampai || $item->berlaku_sampai >= now());
-                    @endphp
-                    <tr class="border-b border-paper-200 last:border-0 hover:bg-paper-100/70">
+        @php
+            $kelompokStandar = $items->groupBy('kelompok_umur');
+        @endphp
+        <div class="divide-y divide-paper-200">
+            @forelse ($kelompokStandar as $kelompok => $standarUmur)
+                @php
+                    $kuMeta = $deskripsiUmur[$kelompok] ?? ['label' => ucfirst($kelompok), 'badge' => 'bg-paper-200 text-ink-800'];
+                @endphp
+                <details class="group" {{ request('kelompok_umur') === $kelompok ? 'open' : '' }}>
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 hover:bg-paper-100/70">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-paper-200 text-ink-700 transition group-open:rotate-90">›</span>
+                            <div>
+                                <span class="rounded px-2 py-1 font-mono text-xs font-semibold {{ $kuMeta['badge'] }}">{{ $kuMeta['label'] }}</span>
+                                <p class="mt-1 text-[11px] text-ink-600">{{ $standarUmur->count() }} koefisien standar</p>
+                            </div>
+                        </div>
+                        <span class="font-mono text-[10px] uppercase tracking-wide text-ink-500">Klik untuk melihat rincian</span>
+                    </summary>
+                    <div class="overflow-x-auto border-t border-paper-200 bg-paper-100/40">
+                        <table class="w-full min-w-[900px] text-left text-sm">
+                            <thead>
+                                <tr class="border-b border-paper-200 font-mono text-[10px] uppercase tracking-wide text-ink-600/80">
+                                    <th class="px-5 py-2.5 font-medium">Komoditas</th>
+                                    <th class="px-5 py-2.5 font-medium">Sektor</th>
+                                    <th class="px-5 py-2.5 text-right font-medium">Per Kapita</th>
+                                    <th class="px-5 py-2.5 font-medium">Satuan / Periode</th>
+                                    <th class="px-5 py-2.5 font-medium">Sumber Acuan</th>
+                                    <th class="px-5 py-2.5 font-medium">Masa Berlaku</th>
+                                    <th class="px-5 py-2.5 text-right font-medium">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach ($standarUmur as $item)
+                                @php
+                                    $isAktif = (!$item->berlaku_sampai || $item->berlaku_sampai >= now());
+                                @endphp
+                                <tr class="border-b border-paper-200 last:border-0 hover:bg-paper-50">
                         <td class="px-5 py-3.5">
                             <span class="font-semibold text-ink-950">{{ $item->komoditas?->nama ?? '—' }}</span>
                             <span class="block text-[11px] text-ink-600">{{ $item->komoditas?->kategori ? ucwords(str_replace('_', ' ', $item->komoditas->kategori)) : '' }}</span>
                         </td>
                         <td class="px-5 py-3.5 font-mono text-xs text-ink-600">
                             {{ ucfirst($item->sektor) }}
-                        </td>
-                        <td class="px-5 py-3.5">
-                            <span class="rounded px-2 py-0.5 font-mono text-[11px] font-semibold {{ $kuMeta['badge'] }}">
-                                {{ $kuMeta['label'] }}
-                            </span>
                         </td>
                         <td class="px-5 py-3.5 text-right font-mono text-sm font-semibold text-ink-950">
                             {{ number_format((float)$item->per_kapita_harian, 6, ',', '.') }}
@@ -210,20 +223,27 @@
                             </div>
                         </td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="px-5 py-10 text-center text-xs text-ink-600/70">
-                            <p class="font-medium text-ink-800">Tidak ada standar kebutuhan gizi yang cocok dengan filter.</p>
-                            <p class="mt-1">Gunakan tombol "+ Tambah Standar Gizi" di atas untuk menambahkan standar baru.</p>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            @empty
+                <div class="px-5 py-10 text-center text-xs text-ink-600/70">
+                    <p class="font-medium text-ink-800">Tidak ada standar kebutuhan gizi yang cocok dengan filter.</p>
+                    <p class="mt-1">Gunakan tombol "+ Tambah Standar Gizi" di atas untuk menambahkan standar baru.</p>
+                </div>
+            @endforelse
+        </div>
     </div>
 
-    <div class="mt-4">
-        {{ $items->links() }}
+    <div class="mt-4 rounded-sm border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-relaxed text-blue-900">
+        <p class="font-semibold">Penjelasan singkat</p>
+        <p class="mt-1">
+            Setiap kelompok umur hanya ditampilkan satu kali. Klik kelompok umur untuk melihat seluruh koefisien komoditas,
+            sektor, satuan, periode, dan masa berlakunya. Koefisien digunakan untuk menghitung kebutuhan konsumsi warga
+            berdasarkan jumlah penduduk pada kelompok umur tersebut.
+        </p>
     </div>
 
     {{-- Modal Tambah Standar Gizi --}}

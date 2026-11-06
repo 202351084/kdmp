@@ -22,7 +22,7 @@
                 </div>
                 <div>
                     <p class="font-mono text-[10px] uppercase tracking-wide text-ink-600/60">Periode</p>
-                    <p class="mt-1 text-base font-semibold text-ink-900">{{ date('F', mktime(0,0,0,$hasil->bulan,1)) }} {{ $hasil->tahun }}</p>
+                    <p class="mt-1 text-base font-semibold text-ink-900">{{ $periodeLabel }}</p>
                 </div>
                 <div>
                     <p class="font-mono text-[10px] uppercase tracking-wide text-ink-600/60">Kebutuhan yang kurang</p>
@@ -75,11 +75,11 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-700">Harga Perkiraan</label>
-                    <input type="text" value="Rp 0 (ditentukan saat perbandingan harga)" class="mt-1 block w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-800 focus:border-merah-400 focus:outline-none" readonly>
+                    <input type="text" value="{{ $hargaPerkiraan !== null ? 'Rp '.number_format($hargaPerkiraan, 2, ',', '.').' / '.($satuanHarga ?: 'satuan') : 'Belum tersedia untuk periode dan satuan ini' }}" class="mt-1 block w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-800 focus:border-merah-400 focus:outline-none" readonly>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-ink-700">Subtotal</label>
-                    <input type="text" value="Rp 0 (ditentukan saat supplier dipilih)" class="mt-1 block w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-800 focus:border-merah-400 focus:outline-none" readonly>
+                    <input type="text" value="{{ $hargaPerkiraan !== null ? 'Rp '.number_format($jumlahDiminta * $hargaPerkiraan, 2, ',', '.') : 'Belum dapat dihitung tanpa harga survei yang valid' }}" class="mt-1 block w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-800 focus:border-merah-400 focus:outline-none" readonly>
                 </div>
                 <div>
                     <label for="id_gudang" class="block text-sm font-medium text-ink-700">Gudang Tujuan</label>

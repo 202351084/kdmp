@@ -175,7 +175,7 @@ class M2KalkulasiTest extends TestCase
         $response->assertSee('Distribusi Status Neraca Komoditas');
         $response->assertSee('Surplus');
         $response->assertSee('Defisit');
-        $response->assertSee('Sumber Data M1');
+        $response->assertSee('Sumber Data Survei Lapangan');
         $response->assertSee('Jalankan Kalkulasi');
     }
 

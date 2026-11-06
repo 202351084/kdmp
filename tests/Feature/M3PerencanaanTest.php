@@ -137,6 +137,13 @@ class M3PerencanaanTest extends TestCase
             'tanggal_survei' => '2025-10-12',
             'status' => 'disetujui',
         ]);
+        $sesiDraft = SesiSurvei::create([
+            'id_petugas' => $petugas->id,
+            'id_wilayah' => 1,
+            'tahun' => 2026,
+            'tanggal_survei' => '2026-10-13',
+            'status' => 'draft',
+        ]);
 
         PemenuhanKomoditas::create([
             'id_sesi' => $sesiA->id,
@@ -174,6 +181,15 @@ class M3PerencanaanTest extends TestCase
             'satuan_harga' => 'KG',
             'tanggal_survei' => '2025-10-12',
         ]);
+        PemenuhanKomoditas::create([
+            'id_sesi' => $sesiDraft->id,
+            'id_komoditas' => 1,
+            'sumber_pemenuhan' => 'Pasar',
+            'nama_tempat' => 'Pasar Draft',
+            'harga' => 1,
+            'satuan_harga' => 'KG',
+            'tanggal_survei' => '2026-10-13',
+        ]);
 
         $result = app(PerbandinganHargaService::class)->bandingkan(1, 1, 2026, 10);
 
@@ -194,5 +210,109 @@ class M3PerencanaanTest extends TestCase
         $this->assertNull($result['highest']);
         $this->assertNull($result['difference']);
         $this->assertNull($result['satuan']);
+    }
+
+    public function test_store_pr_menggunakan_harga_survei_valid_dan_menghitung_subtotal(): void
+    {
+        $user = Pengguna::where('email', 'manajer@kdmp-a.test')->firstOrFail();
+        $sesi = SesiSurvei::create([
+            'id_petugas' => $user->id,
+            'id_wilayah' => 1,
+            'tahun' => 2026,
+            'tanggal_survei' => '2026-10-10',
+            'status' => 'disetujui',
+        ]);
+        PemenuhanKomoditas::create([
+            'id_sesi' => $sesi->id,
+            'id_komoditas' => 1,
+            'sumber_pemenuhan' => 'Pasar',
+            'nama_tempat' => 'Pasar A',
+            'harga' => 12000,
+            'satuan_harga' => 'KG',
+            'tanggal_survei' => '2026-10-10',
+        ]);
+        $hasil = HasilKalkulasi::create([
+            'id_wilayah' => 1,
+            'id_komoditas' => 1,
+            'tahun' => 2026,
+            'bulan' => 10,
+            'total_kebutuhan' => 100,
+            'total_ketersediaan' => 25,
+            'selisih' => -2,
+            'status_surplus_defisit' => 'defisit',
+            'id_unit_usaha_rekomendasi' => 1,
+            'status' => 'disetujui',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('perencanaan.permintaan-pengadaan.store'), [
+            'id_hasil' => $hasil->id_hasil,
+            'id_barang' => 1,
+            'id_gudang' => 1,
+            'tgl_pengajuan' => '2026-10-30',
+        ]);
+
+        $response->assertRedirect(route('perencanaan.permintaan-pengadaan.index'));
+        $pr = PermintaanPengadaan::where('id_entitas', 1)->latest('id_permintaan')->firstOrFail();
+        $detail = $pr->detail()->firstOrFail();
+        $this->assertSame(12000.0, (float) $detail->harga_perkiraan);
+        $this->assertSame(24000.0, (float) $detail->subtotal);
+        $this->assertSame(24000.0, (float) $pr->total_nilai);
+    }
+
+    public function test_index_perencanaan_menampilkan_kebutuhan_defisit_dari_kalkulasi(): void
+    {
+        $user = Pengguna::where('email', 'manajer@kdmp-a.test')->firstOrFail();
+        HasilKalkulasi::create([
+            'id_wilayah' => 1,
+            'id_komoditas' => 1,
+            'tahun' => 2026,
+            'bulan' => 7,
+            'total_kebutuhan' => 100,
+            'total_ketersediaan' => 25,
+            'selisih' => -75,
+            'status_surplus_defisit' => 'defisit',
+            'id_unit_usaha_rekomendasi' => 1,
+            'status' => 'disetujui',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('perencanaan.permintaan-pengadaan.index'));
+
+        $response->assertOk()
+            ->assertSee('Kebutuhan yang Perlu Direncanakan')
+            ->assertSee('Buat draft PR')
+            ->assertSee('Periode Genap')
+            ->assertSee('Periode Ganjil')
+            ->assertSee('komoditas');
+    }
+
+    public function test_halaman_perbandingan_harga_menampilkan_data_dan_periode_yang_dipilih(): void
+    {
+        $petugas = Pengguna::where('email', 'manajer@kdmp-a.test')->firstOrFail();
+        $sesi = SesiSurvei::create([
+            'id_petugas' => $petugas->id,
+            'id_wilayah' => 1,
+            'tahun' => 2026,
+            'tanggal_survei' => '2026-10-10',
+            'status' => 'disetujui',
+        ]);
+        PemenuhanKomoditas::create([
+            'id_sesi' => $sesi->id,
+            'id_komoditas' => 1,
+            'sumber_pemenuhan' => 'Pasar',
+            'nama_tempat' => 'Pasar A',
+            'harga' => 12000,
+            'satuan_harga' => 'KG',
+            'tanggal_survei' => '2026-10-10',
+        ]);
+
+        $response = $this->actingAs($petugas)->get(route('perencanaan.perbandingan-harga.index', [
+            'id_komoditas' => 1,
+            'tahun' => 2026,
+            'periode' => 'genap',
+        ]));
+
+        $response->assertOk()
+            ->assertSee('Rp 12.000,00')
+            ->assertSee('Genap (Juli–Desember)');
     }
 }

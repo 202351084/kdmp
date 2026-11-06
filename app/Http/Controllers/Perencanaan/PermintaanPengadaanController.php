@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Perencanaan;
 use App\Http\Controllers\Concerns\ModuleCrudController;
 use App\Models\Master\Barang;
 use App\Models\Master\Gudang;
+use App\Models\Master\UnitUsaha;
 use App\Models\Perencanaan\HasilKalkulasi;
 use App\Models\Perencanaan\PermintaanPengadaan;
 use App\Services\Perencanaan\PerbandinganHargaService;
+use App\Support\Perencanaan\PeriodeKalkulasi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,15 +34,61 @@ class PermintaanPengadaanController extends ModuleCrudController
 
     public function index(Request $request): View
     {
+        $user = auth()->user();
+        $idWilayah = $user?->entitas?->id_wilayah;
+        $hargaService = app(PerbandinganHargaService::class);
         $items = PermintaanPengadaan::query()
             ->with(['pihak', 'unitUsaha', 'gudang', 'detail.barang'])
             ->latest('id_permintaan')
             ->paginate(15)
             ->withQueryString();
+        $calonPerencanaan = HasilKalkulasi::query()
+            ->with(['komoditas', 'wilayah'])
+            ->where('status_surplus_defisit', 'defisit')
+            ->when($idWilayah, fn ($query) => $query->where('id_wilayah', $idWilayah))
+            ->latest('id_hasil')
+            ->get()
+            ->map(function (HasilKalkulasi $hasil) use ($hargaService, $user): array {
+                $periode = PeriodeKalkulasi::fromMonth((int) $hasil->bulan);
+                $comparison = $hargaService->bandingkan(
+                    (int) $user->id_entitas,
+                    (int) $hasil->id_komoditas,
+                    (int) $hasil->tahun,
+                    $periode,
+                );
+
+                return [
+                    'hasil' => $hasil,
+                    'sektor' => in_array($hasil->komoditas?->kategori, ['pertanian', 'perkebunan', 'peternakan'], true)
+                        ? $hasil->komoditas->kategori
+                        : 'lainnya',
+                    'periode' => $periode,
+                    'calonSupplier' => $hargaService->calonSupplier(
+                        (int) $hasil->id_komoditas,
+                        (int) $hasil->tahun,
+                        $periode,
+                    ),
+                    'hargaTerendah' => $comparison['lowest'],
+                ];
+            });
+        $calonPerencanaanSektor = $calonPerencanaan
+            ->groupBy('sektor')
+            ->sortKeys()
+            ->map(function ($items) {
+                return $items
+                    ->groupBy(fn (array $rencana): int => (int) $rencana['hasil']->id_komoditas)
+                    ->map(fn ($komoditasItems) => $komoditasItems->sortBy([
+                        ['periode', 'asc'],
+                        ['hasil.bulan', 'asc'],
+                    ])->values())
+                    ->sortBy(fn ($komoditasItems) => $komoditasItems->first()['hasil']->komoditas?->nama ?? '')
+                    ->values();
+            });
 
         return view('perencanaan.permintaan-pengadaan.index', [
             'title' => $this->title,
             'items' => $items,
+            'calonPerencanaanSektor' => $calonPerencanaanSektor,
         ]);
     }
 
@@ -72,6 +120,7 @@ class PermintaanPengadaanController extends ModuleCrudController
 
         $barang = $hasil
             ? Barang::query()
+                ->with('satuanDasar')
                 ->where('id_komoditas', $hasil->id_komoditas)
                 ->where('is_active', true)
                 ->first()
@@ -80,22 +129,34 @@ class PermintaanPengadaanController extends ModuleCrudController
         $gudangs = $user
             ? Gudang::query()->where('id_entitas', $user->id_entitas)->where('is_active', true)->orderBy('nama_gudang')->get()
             : collect();
+        $satuanBarang = $barang?->satuanDasar?->kode_satuan;
+        $hargaComparison = $hasil
+            ? $hargaService->bandingkan(
+                (int) $user->id_entitas,
+                (int) $hasil->id_komoditas,
+                (int) $hasil->tahun,
+                PeriodeKalkulasi::fromMonth((int) $hasil->bulan),
+                $satuanBarang,
+            )
+            : ['items' => collect(), 'lowest' => null, 'highest' => null, 'difference' => null, 'satuan' => null];
 
         return view('perencanaan.permintaan-pengadaan.create', [
             'title' => 'PR - Pengadaan Defisit',
             'routeBase' => $this->routeBase,
             'hasil' => $hasil,
+            'periodeLabel' => $hasil
+                ? PeriodeKalkulasi::detail(PeriodeKalkulasi::fromMonth((int) $hasil->bulan))['label'].' '.$hasil->tahun
+                : null,
             'barang' => $barang,
             'jumlahDiminta' => $hasil ? max(0, abs((float) $hasil->selisih)) : 0,
+            'hargaPerkiraan' => $hargaComparison['lowest'],
+            'satuanHarga' => $hargaComparison['satuan'],
             'tanggalPengajuan' => now()->toDateString(),
             'gudangs' => $gudangs,
             'calonSupplier' => $hasil
-                ? $hargaService->calonSupplier((int) $hasil->id_komoditas, (int) $hasil->tahun, (int) $hasil->bulan)
+                ? $hargaService->calonSupplier((int) $hasil->id_komoditas, (int) $hasil->tahun, PeriodeKalkulasi::fromMonth((int) $hasil->bulan))
                 : collect(),
-            'perbandinganHarga' => $hasil
-                ? $hargaService->bandingkan((int) auth()->user()->id_entitas, (int) $hasil->id_komoditas, (int) $hasil->tahun, (int) $hasil->bulan)['items']
-                    ->keyBy('id_wilayah_sumber')
-                : collect(),
+            'perbandinganHarga' => $hargaComparison['items']->keyBy('id_wilayah_sumber'),
         ]);
     }
 
@@ -114,6 +175,7 @@ class PermintaanPengadaanController extends ModuleCrudController
         $user = auth()->user();
 
         $barang = Barang::query()->whereKey($validated['id_barang'])
+            ->with('satuanDasar')
             ->where('id_komoditas', $hasil->id_komoditas)->where('is_active', true)->firstOrFail();
         $gudang = Gudang::query()->whereKey($validated['id_gudang'])
             ->where('id_entitas', $user->id_entitas)->where('is_active', true)->firstOrFail();
@@ -121,12 +183,21 @@ class PermintaanPengadaanController extends ModuleCrudController
         if (! $hasil->id_unit_usaha_rekomendasi) {
             return back()->withInput()->withErrors(['id_hasil' => 'Hasil kalkulasi belum memiliki unit usaha rekomendasi yang valid.']);
         }
+        if (! UnitUsaha::query()->whereKey($hasil->id_unit_usaha_rekomendasi)->exists()) {
+            return back()->withInput()->withErrors(['id_hasil' => 'Unit usaha rekomendasi tidak ditemukan.']);
+        }
 
         $jumlah = abs((float) $hasil->selisih);
         if ($jumlah <= 0) {
             return back()->withInput()->withErrors(['id_hasil' => 'Jumlah kebutuhan defisit tidak valid.']);
         }
-        $comparison = $hargaService->bandingkan((int) $user->id_entitas, (int) $hasil->id_komoditas, (int) $hasil->tahun, (int) $hasil->bulan);
+        $comparison = $hargaService->bandingkan(
+            (int) $user->id_entitas,
+            (int) $hasil->id_komoditas,
+            (int) $hasil->tahun,
+            PeriodeKalkulasi::fromMonth((int) $hasil->bulan),
+            $barang->satuanDasar?->kode_satuan,
+        );
         $harga = $comparison['lowest'] ?? 0;
         $total = $jumlah * $harga;
 

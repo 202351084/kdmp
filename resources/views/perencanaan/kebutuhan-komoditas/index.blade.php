@@ -71,7 +71,7 @@
                 <p class="text-[11px] text-ink-600">Periode enam bulan</p>
             </div>
             <div class="rounded-sm border border-paper-200 bg-paper-100/70 p-3">
-                <span class="font-mono text-[10px] uppercase text-ink-600/70">Basis Data Populasi (M1)</span>
+                <span class="font-mono text-[10px] uppercase text-ink-600/70">Basis Data Populasi Survei</span>
                 <p class="mt-1 font-semibold text-ink-950 text-sm">
                     {{ number_format($totalPenduduk, 0, ',', '.') }} Jiwa
                 </p>
