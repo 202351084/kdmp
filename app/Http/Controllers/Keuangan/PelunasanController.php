@@ -77,6 +77,16 @@ class PelunasanController extends Controller
 
         $kasBanks = KasBank::when($idEntitas, fn($q) => $q->where('id_entitas', $idEntitas))
             ->where('is_active', 1)
+            ->where(function ($query) {
+                $query->where('jenis', 'kas')
+                    ->orWhere(function ($bank) {
+                        $bank->where('jenis', 'bank')
+                            ->whereNotNull('no_rekening')
+                            ->where('no_rekening', '<>', '');
+                    });
+            })
+            ->orderByDesc('is_default')
+            ->orderBy('nama')
             ->get();
 
         // Semua pihak: anggota + supplier (form akan filter via JS sesuai jenis)
@@ -170,7 +180,8 @@ class PelunasanController extends Controller
         $totalNilai    = '0';
         $resolvedItems = []; // [{model, nilai_bayar, kode_akun}]
 
-        $kasBank = KasBank::when($idEntitas, fn($q) => $q->where('id_entitas', $idEntitas))
+        $kasBank = KasBank::where('id_entitas', $idEntitas)
+            ->where('is_active', true)
             ->findOrFail($validated['id_kas_bank']);
 
         foreach ($detailRows as $idx => $baris) {
@@ -306,6 +317,30 @@ class PelunasanController extends Controller
                 'id_pihak'       => $validated['id_pihak'],
                 'tanggal'        => $tanggal,
                 'id_kas_bank'    => $kasBank->id_kas_bank,
+                'transfer_pengirim_nama' => $isPiutang && $kasBank->jenis === 'bank'
+                    ? trim($validated['transfer_pengirim_nama'])
+                    : null,
+                'transfer_pengirim_bank' => $isPiutang && $kasBank->jenis === 'bank'
+                    ? trim($validated['transfer_pengirim_bank'])
+                    : null,
+                'transfer_pengirim_rekening' => $isPiutang && $kasBank->jenis === 'bank'
+                    ? trim($validated['transfer_pengirim_rekening'])
+                    : null,
+                'transfer_no_referensi' => $isPiutang && $kasBank->jenis === 'bank'
+                    ? trim($validated['transfer_no_referensi'])
+                    : null,
+                'transfer_penerima_nama' => $isPiutang && $kasBank->jenis === 'bank'
+                    ? $kasBank->nama
+                    : null,
+                'transfer_penerima_rekening' => $isPiutang && $kasBank->jenis === 'bank'
+                    ? $kasBank->no_rekening
+                    : null,
+                'transfer_dikonfirmasi_pada' => $isPiutang && $kasBank->jenis === 'bank'
+                    ? now()
+                    : null,
+                'transfer_dikonfirmasi_oleh' => $isPiutang && $kasBank->jenis === 'bank'
+                    ? auth()->id()
+                    : null,
                 'total_nilai'    => $totalNilai,
                 'catatan'        => $validated['catatan'] ?? null,
                 'created_by'     => auth()->id(),
@@ -388,6 +423,3 @@ class PelunasanController extends Controller
         return view('keuangan.pelunasan.show', compact('pelunasan'));
     }
 }
-
-
-

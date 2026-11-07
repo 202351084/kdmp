@@ -244,9 +244,9 @@ class JurnalService
         DB::transaction(fn () => $this->bangunBukuBesarInternal($tahun, $bulan), 3);
     }
 
-    private function bangunBukuBesarInternal(int $tahun, int $bulan): void
+    private function bangunBukuBesarInternal(int $tahun, int $bulan, ?int $entitasId = null): void
     {
-        $idEntitas = $this->getEntitasAktif();
+        $idEntitas = $this->getEntitasAktif($entitasId);
 
         // Hapus ringkasan periode ini Ã¢â‚¬â€ akan dibangun ulang dari nol
         DB::table('buku_besar_periode')
@@ -472,10 +472,30 @@ class JurnalService
 
         // Nilai awal jika counter prefix ini belum ada: lanjutkan dari nomor
         // tertinggi yang sudah ada (data lama sebelum tabel counter dibuat).
-        $nomorAwal = (int) DB::table('jurnal_header')
+        $nomorLama = DB::table('jurnal_header')
             ->where('id_entitas', $entitasId)
             ->where('no_jurnal', 'like', $prefix . '%')
-            ->max(DB::raw('CAST(SUBSTRING(no_jurnal, ' . (strlen($prefix) + 1) . ') AS UNSIGNED)')) + 1;
+            ->pluck('no_jurnal')
+            ->map(fn (string $noJurnal) => (int) substr($noJurnal, strlen($prefix)))
+            ->max() ?? 0;
+        $nomorAwal = $nomorLama + 1;
+
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement(
+                'INSERT INTO penomoran_jurnal (id_entitas, prefix, nomor_terakhir)
+                 VALUES (?, ?, ?)
+                 ON CONFLICT (id_entitas, prefix) DO UPDATE
+                 SET nomor_terakhir = penomoran_jurnal.nomor_terakhir + 1',
+                [$entitasId, $prefix, $nomorAwal],
+            );
+
+            $nomor = (int) DB::table('penomoran_jurnal')
+                ->where('id_entitas', $entitasId)
+                ->where('prefix', $prefix)
+                ->value('nomor_terakhir');
+
+            return $prefix . sprintf('%04d', $nomor);
+        }
 
         DB::statement(
             'INSERT INTO penomoran_jurnal (id_entitas, prefix, nomor_terakhir)
@@ -526,7 +546,15 @@ class JurnalService
         try {
             return DB::transaction(function () use ($tahun, $bulan, $header, $baris, $entitasId) {
                 $noJurnal    = $this->generateNomorJurnal($tahun, $bulan, $entitasId);
-                $jsonPayload = $this->susunJsonPayload(['no_jurnal' => $noJurnal, ...$header], $baris);
+                $jsonPayload = $this->susunJsonPayload([
+                    'no_jurnal' => $noJurnal,
+                    'id_entitas' => $entitasId,
+                    ...$header,
+                ], $baris);
+
+                if (DB::getDriverName() === 'sqlite') {
+                    return $this->postingSqlite($jsonPayload);
+                }
 
                 // Pastikan string JSON dan variabel teks di stored procedure memakai
                 // collation yang sama dengan kolom kode akun jurnal.
@@ -603,6 +631,12 @@ class JurnalService
                 ]);
             }
 
+            $this->bangunBukuBesarInternal(
+                (int) $payload['periode_tahun'],
+                (int) $payload['periode_bulan'],
+                $idEntitas,
+            );
+
             return $header;
         });
     }
@@ -624,6 +658,5 @@ class JurnalService
         return null;
     }
 }
-
 
 

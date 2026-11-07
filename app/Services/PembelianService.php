@@ -126,17 +126,36 @@ class PembelianService
         string $jenisPembayaran,
         ?string $tglJatuhTempo = null,
         ?int $idKasBank = null,
+        string $sumberPembelian = 'warga_lokal',
     ): Pembelian {
+        if (! in_array($sumberPembelian, ['desa_lain', 'warga_lokal', 'pengambilan_konsinyasi'], true)) {
+            throw new \Exception('Sumber pembelian tidak valid.');
+        }
+
         if (!in_array($jenisPembayaran, ['tunai', 'transfer', 'kredit'], true)) {
             throw new \Exception('Jenis pembayaran pembelian tidak valid.');
         }
 
-        if ($jenisPembayaran === 'kredit' && !$tglJatuhTempo) {
-            throw new \Exception('Tanggal jatuh tempo wajib diisi untuk pembayaran kredit.');
+        if ($sumberPembelian === 'pengambilan_konsinyasi' && $jenisPembayaran !== 'kredit') {
+            throw new \Exception('Pengambilan konsinyasi dicatat sebagai hutang, tanpa pembayaran kas atau bank.');
+        }
+
+        if ($sumberPembelian === 'pengambilan_konsinyasi' && $idKasBank !== null) {
+            throw new \Exception('Pengambilan konsinyasi tidak menggunakan kas atau rekening bank.');
+        }
+
+        if ($jenisPembayaran === 'kredit'
+            && (! $tglJatuhTempo || \Carbon\Carbon::parse($tglJatuhTempo)->startOfDay()->lt(today()))) {
+            throw new \Exception('Tanggal jatuh tempo wajib diisi dan tidak boleh sebelum hari ini untuk pembayaran kredit.');
         }
 
         if (empty($items)) {
             throw new \Exception('Minimal satu item harus ditambahkan.');
+        }
+
+        if ($sumberPembelian === 'pengambilan_konsinyasi'
+            && collect($items)->contains(fn (array $item) => (float) ($item['harga_satuan'] ?? 0) <= 0)) {
+            throw new \Exception('Harga yang ditetapkan desa pengirim harus lebih besar dari nol.');
         }
 
         DB::beginTransaction();
@@ -159,6 +178,7 @@ class PembelianService
                 'id_entitas' => $idEntitas,
                 'kode_pembelian' => $kodePembelian,
                 'id_permintaan' => null,
+                'sumber_pembelian' => $sumberPembelian,
                 'id_pihak' => $idPihak,
                 'id_unit_usaha' => $idUnitUsaha,
                 'id_gudang' => $idGudang,
@@ -173,7 +193,7 @@ class PembelianService
             ]);
 
             foreach ($items as $item) {
-                $faktorKonversi = self::conversionFactor(
+                $faktorKonversi = self::kilogramConversionFactor(
                     (int) $item['id_barang'],
                     (int) $item['id_satuan'],
                 );
@@ -212,8 +232,9 @@ class PembelianService
         try {
             $pembelian->loadMissing(['unitUsaha', 'pihak']);
 
+            $isConsignmentIntake = $pembelian->sumber_pembelian === 'pengambilan_konsinyasi';
             $isPetani = $pembelian->pihak?->jenis_pihak === 'petani';
-            $transactionCode = match (true) {
+            $transactionCode = $isConsignmentIntake ? 'KPN' : match (true) {
                 $isPetani && $pembelian->jenis_pembayaran === 'tunai' => 'BPT',
                 $pembelian->jenis_pembayaran === 'tunai' => 'BTU',
                 $pembelian->jenis_pembayaran === 'transfer' => 'BTF',
@@ -221,18 +242,22 @@ class PembelianService
                 default => throw new \Exception('Jenis pembayaran pembelian tidak valid.'),
             };
 
-            $idKasBank = $pembelian->id_kas_bank
+            $idKasBank = $isConsignmentIntake ? null : ($pembelian->id_kas_bank
                 ?? DB::table('master_kas_bank')
                     ->where('id_entitas', $pembelian->id_entitas)
                     ->where('jenis', $pembelian->jenis_pembayaran === 'tunai' ? 'kas' : 'bank')
                     ->where('is_active', true)
                     ->value('id_kas_bank')
-                ?? DB::table('master_kas_bank')->where('is_active', true)->value('id_kas_bank');
+                ?? DB::table('master_kas_bank')->where('is_active', true)->value('id_kas_bank'));
 
             $idJurnal = null;
             $statusPosting = 'F';
 
             try {
+                if ($isConsignmentIntake && ! class_exists(JurnalService::class)) {
+                    throw new \RuntimeException('Layanan jurnal tidak tersedia untuk mem-posting hutang konsinyasi.');
+                }
+
                 if (class_exists(JurnalService::class)) {
                     $jurnal = app(JurnalService::class)->posting(
                         $transactionCode,
@@ -253,6 +278,10 @@ class PembelianService
                     $statusPosting = $idJurnal ? 'T' : 'F';
                 }
             } catch (\Throwable $e) {
+                if ($isConsignmentIntake) {
+                    throw $e;
+                }
+
                 $idJurnal = null;
                 $statusPosting = 'F';
             }
@@ -261,7 +290,7 @@ class PembelianService
                 'status' => 'disetujui',
                 'status_posting' => $statusPosting,
                 'id_jurnal' => $idJurnal,
-                'id_kas_bank' => $idKasBank,
+                'id_kas_bank' => $isConsignmentIntake ? null : $idKasBank,
             ]);
 
             if ($pembelian->jenis_pembayaran === 'kredit') {
@@ -270,7 +299,7 @@ class PembelianService
                     [
                         'id_entitas' => $pembelian->id_entitas,
                         'id_pihak' => $pembelian->id_pihak,
-                        'kode_akun' => '2111',
+                        'kode_akun' => $isConsignmentIntake ? '2117' : '2111',
                         'tanggal' => $pembelian->tanggal_transaksi,
                         'tgl_jatuh_tempo' => $pembelian->tgl_jatuh_tempo,
                         'nilai_awal' => $pembelian->total_pembelian,
@@ -293,6 +322,13 @@ class PembelianService
     {
         if ($pembelian->status !== 'draft') {
             throw new \Exception('Hanya pembelian draft yang dapat diubah.');
+        }
+
+        if ($pembelian->sumber_pembelian === 'pengambilan_konsinyasi'
+            && ($data['jenis_pembayaran'] !== 'kredit'
+                || ! empty($data['id_kas_bank'])
+                || collect($data['items'])->contains(fn (array $item) => (float) ($item['harga_satuan'] ?? 0) <= 0))) {
+            throw new \Exception('Pengambilan konsinyasi harus dicatat sebagai hutang tanpa kas/bank, dengan harga satuan dari desa pengirim.');
         }
 
         DB::beginTransaction();
@@ -328,7 +364,7 @@ class PembelianService
             $pembelian->detail()->delete();
 
             foreach ($data['items'] as $item) {
-                $faktorKonversi = self::conversionFactor(
+                $faktorKonversi = self::kilogramConversionFactor(
                     (int) $item['id_barang'],
                     (int) $item['id_satuan'],
                 );
@@ -412,6 +448,20 @@ class PembelianService
         return (float) $factor;
     }
 
+    private static function kilogramConversionFactor(int $idBarang, int $idSatuan): float
+    {
+        $isKilogram = DB::table('satuan')
+            ->where('id', $idSatuan)
+            ->whereRaw('UPPER(kode_satuan) = ?', ['KG'])
+            ->exists();
+
+        if (! $isKilogram) {
+            throw new \Exception('Satuan pembelian harus KG.');
+        }
+
+        return self::conversionFactor($idBarang, $idSatuan);
+    }
+
     /**
      * Create purchase return.
      *
@@ -457,6 +507,24 @@ class PembelianService
                 ->whereKey($pembelian->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            $idSatuanKg = DB::table('satuan')
+                ->whereRaw('UPPER(kode_satuan) = ?', ['KG'])
+                ->value('id');
+
+            if (! $idSatuanKg) {
+                throw new \Exception('Master satuan KG belum tersedia.');
+            }
+
+            $items = array_map(function (array $item) use ($idSatuanKg) {
+                $factor = self::conversionFactor(
+                    (int) $item['id_barang'],
+                    (int) $idSatuanKg,
+                );
+                $item['qty_dasar'] = (float) $item['qty_dasar'] * $factor;
+
+                return $item;
+            }, $items);
 
             $returnedByBarang = $pembelian->returs
                 ->flatMap(fn ($retur) => $retur->detail)
@@ -570,9 +638,10 @@ class PembelianService
                 throw new \Exception('Pembelian untuk retur tidak ditemukan.');
             }
 
+            $isConsignmentIntake = $pembelian->sumber_pembelian === 'pengambilan_konsinyasi';
             $transactionCode = match ($retur->jenis_penyelesaian) {
                 'uang' => 'RBU',
-                'potong_hutang' => 'RBH',
+                'potong_hutang' => $isConsignmentIntake ? 'RBK' : 'RBH',
                 'ganti_barang' => null,
                 default => throw new \Exception('Jenis penyelesaian tidak dikenal.'),
             };
@@ -727,5 +796,3 @@ class PembelianService
         );
     }
 }
-
-

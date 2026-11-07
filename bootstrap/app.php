@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RestrictPurchasingRole;
 use App\Http\Middleware\SetEntitasAktif;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('web', SetEntitasAktif::class);
+        $middleware->appendToGroup('web', RestrictPurchasingRole::class);
         $middleware->alias([
             'super_admin' => \App\Http\Middleware\SuperAdminMiddleware::class,
         ]);

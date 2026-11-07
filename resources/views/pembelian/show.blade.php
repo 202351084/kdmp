@@ -61,11 +61,21 @@
 
                 <div>
                     <div class="text-sm font-medium text-ink-600">
-                        Supplier
+                        {{ $item->sumber_pembelian === 'pengambilan_konsinyasi' ? 'Desa Pengirim' : 'Supplier' }}
                     </div>
 
                     <div class="mt-1 text-sm text-ink-900">
                         {{ $item->pihak->nama_pihak ?? 'N/A' }}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-sm font-medium text-ink-600">
+                        Sumber Transaksi
+                    </div>
+
+                    <div class="mt-1 text-sm text-ink-900">
+                        {{ $item->sumber_pembelian === 'pengambilan_konsinyasi' ? 'Pengambilan Konsinyasi dari Desa Lain' : ($item->sumber_pembelian === 'desa_lain' ? 'Pembelian dari Desa Lain' : 'Pembelian dari Warga Lokal') }}
                     </div>
                 </div>
 
@@ -95,7 +105,7 @@
                     </div>
 
                     <div class="mt-1 text-sm text-ink-900">
-                        {{ ucfirst($item->jenis_pembayaran) }}
+                        {{ $item->sumber_pembelian === 'pengambilan_konsinyasi' ? 'Hutang Konsinyasi' : ucfirst($item->jenis_pembayaran) }}
                     </div>
                 </div>
 
@@ -273,6 +283,12 @@
             </h3>
 
             <div class="space-y-2">
+
+                @if (in_array($item->status, ['disetujui', 'diterima', 'selesai'], true))
+                    <a href="{{ route("$routeBase.invoice", $item) }}" class="block w-full rounded-sm bg-emerald-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-emerald-700">
+                        Lihat / Cetak Invoice
+                    </a>
+                @endif
 
                 @if ($item->status === 'draft')
                     <form

@@ -13,6 +13,12 @@ Dokumen ini menggantikan asumsi "penjualan kredit antar desa" dari revisi sebelu
 
 **Barang titipan tetap milik Desa A sampai terjual ke warga.**
 
+### Catatan alur Pembelian: pengambilan konsinyasi
+
+Form Pembelian menyediakan pencatatan pengambilan konsinyasi dari desa lain sebagai kebijakan transaksi tersendiri: admin mencatat desa pengirim, komoditas, kuantitas, harga per satuan dari pengirim, dan jatuh tempo. Setelah disetujui, sistem mengakui persediaan unit usaha dan hutang konsinyasi (akun 2117), tanpa memilih kas/bank.
+
+Alur ini berbeda dari model konsinyasi antar-desa di bawah, yang mengakui hutang hanya saat barang titipan terjual. Persetujuan pengambilan ini belum memperbarui stok Gudang atau Penjualan; integrasi stok perlu dilakukan sebagai pekerjaan terpisah. Jangan menyamakan dokumen pengambilan ini dengan pengiriman titipan `KTK`.
+
 Empat konsekuensi langsung:
 
 1. Saat pengiriman: tidak ada penjualan, tidak ada piutang, tidak ada hutang.

@@ -34,6 +34,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::unprepared('DROP PROCEDURE IF EXISTS sp_tutup_tahun');
 
         DB::unprepared("
@@ -354,6 +358,10 @@ END
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::unprepared('DROP PROCEDURE IF EXISTS sp_tutup_tahun');
     }
 };
