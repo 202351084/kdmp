@@ -21,6 +21,15 @@
                 <dd class="text-right font-medium text-ink-800">{{ $item->gudang->nama_gudang ?? '-' }}</dd>
                 <dt class="text-ink-600">Barang</dt>
                 <dd class="text-right font-medium text-ink-800">{{ $item->barang->nama_barang ?? '-' }}</dd>
+                @if ($item->relationLoaded('batch') && $item->batch)
+                    <dt class="text-ink-600">Batch</dt>
+                    <dd class="text-right font-medium text-ink-800">
+                        {{ $item->batch->kode_batch }}
+                        @if ($item->batch->tanggal_kedaluwarsa)
+                            · Kedaluwarsa {{ $item->batch->tanggal_kedaluwarsa->format('d M Y') }}
+                        @endif
+                    </dd>
+                @endif
                 <dt class="text-ink-600">Status</dt>
                 <dd class="text-right font-medium text-sawah-600">{{ $item->status }}</dd>
             </dl>
@@ -33,7 +42,7 @@
         </div>
         <dl class="grid gap-4 p-5 text-sm md:grid-cols-3">
             <div>
-                <dt class="text-ink-600">Qty Rusak / Hilang / Susut</dt>
+                <dt class="text-ink-600">Qty Rusak / Hilang / Susut / Kedaluwarsa</dt>
                 <dd class="mt-1 font-medium text-ink-800">
                     {{ rtrim(rtrim(number_format((float) $item->qty, 4, ',', '.'), '0'), ',') }}
                     {{ $item->barang->satuanDasar->kode_satuan ?? '' }}

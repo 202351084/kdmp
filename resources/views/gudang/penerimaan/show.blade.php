@@ -37,26 +37,69 @@
                     <tr class="border-b border-paper-300 bg-paper-200/60 font-mono text-[11px] uppercase tracking-wide text-ink-600/70">
                         <th class="px-4 py-3 font-medium">No</th>
                         <th class="px-4 py-3 font-medium">Barang</th>
-                        <th class="px-4 py-3 text-right font-medium">Qty</th>
-                        <th class="px-4 py-3 text-right font-medium">Harga Satuan</th>
-                        <th class="px-4 py-3 text-right font-medium">Subtotal</th>
+                        <th class="px-4 py-3 text-right font-medium">Qty Diterima</th>
+                        <th class="px-4 py-3 text-right font-medium">Qty Layak (Dasar)</th>
+                        <th class="px-4 py-3 text-right font-medium">Qty Tidak Layak (Dasar)</th>
+                        <th class="px-4 py-3 font-medium">Alasan</th>
+                        <th class="px-4 py-3 text-right font-medium">Harga / Satuan Dasar</th>
+                        <th class="px-4 py-3 text-right font-medium">Nilai Layak Masuk Stok</th>
+                        <th class="px-4 py-3 text-right font-medium">Nilai Tidak Layak</th>
+                        <th class="px-4 py-3 text-right font-medium">Nilai Penerimaan Bruto</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($item->detail as $detail)
                         <tr class="border-b border-paper-200 last:border-0">
                             <td class="px-4 py-3 text-ink-600">{{ $loop->iteration }}</td>
-                            <td class="px-4 py-3 text-ink-800">{{ $detail->barang->nama_barang ?? '-' }}</td>
+                            <td class="px-4 py-3 text-ink-800">
+                                {{ $detail->barang->nama_barang ?? '-' }}
+                                @if ($detail->relationLoaded('batchDetails') && $detail->batchDetails->isNotEmpty())
+                                    <ul class="mt-2 space-y-1 text-xs text-ink-600">
+                                        @foreach ($detail->batchDetails as $batchDetail)
+                                            <li>
+                                                Batch {{ $batchDetail->batch->kode_batch ?? '-' }}:
+                                                {{ rtrim(rtrim(number_format((float) $batchDetail->qty_layak, 4, ',', '.'), '0'), ',') }}
+                                                layak
+                                                @if ($batchDetail->batch?->tanggal_kedaluwarsa)
+                                                    · Kedaluwarsa {{ $batchDetail->batch->tanggal_kedaluwarsa->format('d M Y') }}
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-right text-ink-800">
-                                {{ rtrim(rtrim(number_format((float) $detail->qty_dasar, 4, ',', '.'), '0'), ',') }}
+                                {{ rtrim(rtrim(number_format((float) $detail->qty_input, 4, ',', '.'), '0'), ',') }}
+                                {{ $detail->satuanInput?->kode_satuan ?? '-' }}
+                                <span class="block text-[11px] text-ink-600">
+                                    1 {{ $detail->satuanInput?->kode_satuan ?? '-' }} =
+                                    {{ rtrim(rtrim(number_format((float) $detail->faktor_konversi, 6, ',', '.'), '0'), ',') }}
+                                    {{ $detail->barang->satuanDasar->kode_satuan ?? '' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right text-ink-800">
+                                {{ rtrim(rtrim(number_format((float) $detail->qty_layak, 4, ',', '.'), '0'), ',') }}
                                 {{ $detail->barang->satuanDasar->kode_satuan ?? '' }}
                             </td>
-                            <td class="px-4 py-3 text-right text-ink-800">Rp {{ number_format((float) $detail->harga_satuan_dasar, 2, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right text-ink-800">
+                                {{ rtrim(rtrim(number_format((float) $detail->qty_tidak_layak, 4, ',', '.'), '0'), ',') }}
+                                {{ $detail->barang->satuanDasar->kode_satuan ?? '' }}
+                            </td>
+                            <td class="px-4 py-3 text-ink-700">{{ $detail->alasan_tidak_layak ?: '-' }}</td>
+                            <td class="px-4 py-3 text-right text-ink-800">
+                                Rp {{ rtrim(rtrim(number_format((float) $detail->harga_satuan_dasar, 4, ',', '.'), '0'), ',') }}
+                            </td>
+                            <td class="px-4 py-3 text-right font-medium text-sawah-600">
+                                Rp {{ number_format((float) $detail->qty_layak * (float) $detail->harga_satuan_dasar, 2, ',', '.') }}
+                            </td>
+                            <td class="px-4 py-3 text-right font-medium text-merah-600">
+                                Rp {{ number_format((float) $detail->qty_tidak_layak * (float) $detail->harga_satuan_dasar, 2, ',', '.') }}
+                            </td>
                             <td class="px-4 py-3 text-right font-medium text-ink-800">Rp {{ number_format((float) $detail->subtotal, 2, ',', '.') }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-10 text-center text-sm text-ink-600/60">Belum ada detail barang.</td>
+                            <td colspan="10" class="px-4 py-10 text-center text-sm text-ink-600/60">Belum ada detail barang.</td>
                         </tr>
                     @endforelse
                 </tbody>

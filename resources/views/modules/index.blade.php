@@ -13,16 +13,25 @@
             </button>
         </form>
 
-        @if (Route::has($routeBase . '.create'))
-            <a href="{{ route($routeBase . '.create') }}"
-               class="rounded-sm bg-merah-500 px-4 py-2 text-sm font-medium text-paper-50 hover:bg-merah-600">
-                + Tambah
-            </a>
-        @else
-            <span class="rounded-sm border border-paper-300 px-3 py-2 text-xs text-ink-600/60">
-                Read-only — dibuat otomatis oleh service transaksi
-            </span>
-        @endif
+        <div class="flex items-center gap-2">
+            @if ($routeBase === 'master.barang' && (auth()->user()?->hasPeran('admin_gudang') || auth()->user()?->hasPeran('manajer')))
+                <a href="{{ route('master.barang.stok-minimum.index') }}"
+                   class="rounded-sm border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 hover:border-merah-400">
+                    Atur Stok Minimum
+                </a>
+            @endif
+
+            @if (Route::has($routeBase . '.create'))
+                <a href="{{ route($routeBase . '.create') }}"
+                   class="rounded-sm bg-merah-500 px-4 py-2 text-sm font-medium text-paper-50 hover:bg-merah-600">
+                    + Tambah
+                </a>
+            @else
+                <span class="rounded-sm border border-paper-300 px-3 py-2 text-xs text-ink-600/60">
+                    Read-only — dibuat otomatis oleh service transaksi
+                </span>
+            @endif
+        </div>
     </div>
 
     <div class="overflow-hidden rounded-sm border border-paper-300 bg-paper-50">

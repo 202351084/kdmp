@@ -6,7 +6,18 @@
     </div>
 
     <div class="mb-5 rounded-sm border border-paper-300 bg-paper-50 p-4">
-        <form method="GET" class="grid gap-3 md:grid-cols-[1fr_220px_auto] md:items-end">
+        <form method="GET" class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 md:items-end">
+            <div>
+                <label class="mb-1 block text-xs font-medium text-ink-700">Gudang</label>
+                <select name="id_gudang" class="w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 text-sm focus:border-merah-400 focus:outline-none">
+                    <option value="">Semua gudang</option>
+                    @foreach ($gudang as $item)
+                        <option value="{{ $item->id_gudang }}" {{ request('id_gudang') == $item->id_gudang ? 'selected' : '' }}>
+                            {{ $item->nama_gudang }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
             <div>
                 <label class="mb-1 block text-xs font-medium text-ink-700">Barang</label>
                 <select name="id_barang" class="w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 text-sm focus:border-merah-400 focus:outline-none">
@@ -19,6 +30,14 @@
                 </select>
             </div>
             <div>
+                <label class="mb-1 block text-xs font-medium text-ink-700">Tanggal Mulai</label>
+                <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}" class="w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 text-sm focus:border-merah-400 focus:outline-none">
+            </div>
+            <div>
+                <label class="mb-1 block text-xs font-medium text-ink-700">Tanggal Selesai</label>
+                <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}" class="w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 text-sm focus:border-merah-400 focus:outline-none">
+            </div>
+            <div>
                 <label class="mb-1 block text-xs font-medium text-ink-700">Jenis Mutasi</label>
                 <select name="jenis_mutasi" class="w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2 text-sm focus:border-merah-400 focus:outline-none">
                     <option value="">Semua jenis</option>
@@ -27,9 +46,14 @@
                     @endforeach
                 </select>
             </div>
-            <button class="rounded-sm border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 hover:border-merah-400">
-                Filter
-            </button>
+            <div class="flex gap-2">
+                <button class="flex-1 rounded-sm border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 hover:border-merah-400">
+                    Filter
+                </button>
+                <a href="{{ route('gudang.kartu-stok.index') }}" class="rounded-sm border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 hover:border-merah-400">
+                    Reset
+                </a>
+            </div>
         </form>
     </div>
 
@@ -42,6 +66,7 @@
                 <thead>
                     <tr class="border-b border-paper-300 bg-paper-200/60 font-mono text-[11px] uppercase tracking-wide text-ink-600/70">
                         <th class="px-4 py-3 font-medium">Tanggal</th>
+                        <th class="px-4 py-3 font-medium">Gudang</th>
                         <th class="px-4 py-3 font-medium">Barang</th>
                         <th class="px-4 py-3 font-medium">Jenis</th>
                         <th class="px-4 py-3 font-medium">Referensi</th>
@@ -55,6 +80,7 @@
                     @forelse ($items as $item)
                         <tr class="border-b border-paper-200 last:border-0 hover:bg-paper-100/70">
                             <td class="px-4 py-3 text-ink-800">{{ $item->tanggal?->format('d M Y') }}</td>
+                            <td class="px-4 py-3 text-ink-800">{{ $item->gudang->nama_gudang ?? '-' }}</td>
                             <td class="px-4 py-3 text-ink-800">{{ $item->barang->nama_barang ?? '-' }}</td>
                             <td class="px-4 py-3">
                                 <span class="rounded-full px-2 py-0.5 text-xs {{ $item->jenis_mutasi === 'IN' || $item->jenis_mutasi === 'ADJ_IN' ? 'bg-sawah-100 text-sawah-600' : 'bg-merah-100 text-merah-600' }}">
@@ -78,7 +104,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-10 text-center text-sm text-ink-600/60">Belum ada riwayat mutasi stok.</td>
+                            <td colspan="9" class="px-4 py-10 text-center text-sm text-ink-600/60">Belum ada riwayat mutasi stok.</td>
                         </tr>
                     @endforelse
                 </tbody>

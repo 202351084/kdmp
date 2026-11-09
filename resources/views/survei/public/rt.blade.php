@@ -120,5 +120,7 @@
             &copy; {{ date('Y') }} Kader Desa Merdeka Pangan.
         </div>
     </main>
+
+    @stack('scripts')
 </body>
 </html>

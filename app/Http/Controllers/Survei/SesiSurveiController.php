@@ -10,10 +10,12 @@ use App\Models\Survei\Jawaban;
 use App\Models\Survei\RekamanSuara;
 use App\Models\Tenant\Wilayah;
 use App\Models\Pengguna;
+use App\Services\Survei\SurveySyncService;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
+use Throwable;
 
 class SesiSurveiController extends ModuleCrudController
 {
@@ -21,7 +23,7 @@ class SesiSurveiController extends ModuleCrudController
     protected string $view = 'survei.sesi';
     protected string $title = 'Sesi Survei';
     protected string $routeBase = 'survei.sesi';
-    protected array $withRelations = ['wilayah', 'petugas'];
+    protected array $withRelations = ['wilayah', 'petugas', 'jawaban'];
 
     /**
      * Mengambil ID wilayah milik desa pengguna yang sedang login.
@@ -30,11 +32,11 @@ class SesiSurveiController extends ModuleCrudController
     private function getUserWilayahId(): ?int
     {
         $user = auth()->user();
-        if (!$user || !$user->id_koperasi) {
+        if (!$user || !$user->id_entitas) {
             return null;
         }
 
-        return $user->koperasi?->id_wilayah;
+        return $user->entitas?->id_wilayah;
     }
 
     private function checkHakAksesSesi(SesiSurvei $sesi): void
@@ -47,24 +49,31 @@ class SesiSurveiController extends ModuleCrudController
 
     public function index(Request $request): View
     {
-        $query = SesiSurvei::with(['wilayah', 'petugas', 'narasumber']);
+        $query = SesiSurvei::with(['wilayah', 'petugas', 'jawaban', 'narasumber']);
 
         if ($userWilayahId = $this->getUserWilayahId()) {
             $query->where('id_wilayah', $userWilayahId);
         }
 
         if ($search = $request->query('q')) {
-            $query->whereHas('wilayah', function ($q) use ($search) {
-                $q->where('nama', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('catatan', 'like', "%{$search}%")
+                    ->orWhereHas('wilayah', fn ($qw) => $qw->where('nama', 'like', "%{$search}%"))
+                    ->orWhereHas('petugas', fn ($qp) => $qp->where('nama', 'like', "%{$search}%"));
             });
         }
 
-        $items = $query->latest('id')->paginate(15)->withQueryString();
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        $items = $query->latest('id')->paginate($this->perPage)->withQueryString();
 
         return view('survei.sesi.index', [
-            'items'     => $items,
-            'title'     => 'Daftar Sesi Survei',
+            'items' => $items,
+            'title' => $this->title,
             'routeBase' => $this->routeBase,
+            'columns' => ['id', 'id_wilayah', 'tahun', 'tanggal_survei', 'status'],
         ]);
     }
 
@@ -84,7 +93,7 @@ class SesiSurveiController extends ModuleCrudController
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
         ];
-        
+
         return view('survei.sesi.create', [
             'title' => 'Buat Sesi Survei Baru',
             'wilayahs' => $wilayahs,
@@ -145,16 +154,17 @@ class SesiSurveiController extends ModuleCrudController
     {
         return $targetSesi->salinDataDariPeriodeSebelumnya();
     }
-    
+
     public function show(int|string $id): View
     {
         $item = SesiSurvei::with(['wilayah.parent.parent.parent', 'petugas'])->findOrFail($id);
         $this->checkHakAksesSesi($item);
         
         return view('survei.sesi.show', [
-            'title' => 'Detail Sesi Survei',
+            'sesi' => $item,
             'item' => $item,
-            'routeBase' => $this->routeBase
+            'title' => 'Detail Sesi Survei #' . $item->id,
+            'routeBase' => $this->routeBase,
         ]);
     }
 
@@ -177,7 +187,7 @@ class SesiSurveiController extends ModuleCrudController
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
         ];
-        
+
         return view('survei.sesi.edit', [
             'title' => 'Ubah Sesi Survei',
             'item' => $item,
@@ -241,5 +251,30 @@ class SesiSurveiController extends ModuleCrudController
         });
 
         return back()->with('success', 'Sesi survei berhasil dihapus.');
+    }
+
+    /**
+     * Memicu sinkronisasi eksplisit data survei ke modul Perencanaan (M2/M3).
+     */
+    public function sinkron(Request $request, int|string $id, SurveySyncService $syncService): RedirectResponse
+    {
+        try {
+            $sesi = SesiSurvei::findOrFail($id);
+            $hasil = $syncService->syncSesi($sesi);
+
+            $msg = "Sinkronisasi berhasil! ";
+            $msg .= "{$hasil['demografi_updated']} baris demografi, ";
+            $msg .= "{$hasil['ketersediaan_updated']} ketersediaan komoditas, ";
+            $msg .= "{$hasil['standar_updated']} standar kebutuhan diperbarui.";
+
+            if (!empty($hasil['data_gaps'])) {
+                $gapMsg = implode('; ', array_column($hasil['data_gaps'], 'keterangan'));
+                return back()->with('status', $msg)->with('warning', "Catatan Data Gap: " . $gapMsg);
+            }
+
+            return back()->with('status', $msg);
+        } catch (Throwable $e) {
+            return back()->with('error', 'Gagal melakukan sinkronisasi: ' . $e->getMessage());
+        }
     }
 }

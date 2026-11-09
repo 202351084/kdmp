@@ -40,7 +40,7 @@
             </div>
             <input type="text" name="search" value="{{ request('search') }}"
                    class="block w-full rounded-sm border-paper-300 py-2 pl-10 pr-3 text-sm placeholder-ink-400 shadow-sm focus:border-merah-500 focus:outline-none focus:ring-1 focus:ring-merah-500"
-                   placeholder="Cari berdasarkan nama RT, dusun, atau ketua RT...">
+                   placeholder="Cari berdasarkan no RT, dusun, atau ketua RT...">
         </div>
         
         <button type="submit"
@@ -101,7 +101,7 @@
                     <tr>
                         <th class="px-6 py-4 font-medium">No</th>
                         <th class="px-6 py-4 font-medium">Desa / Wilayah</th>
-                        <th class="px-6 py-4 font-medium">Nama RT / RW</th>
+                        <th class="px-6 py-4 font-medium">No RT / RW</th>
                         <th class="px-6 py-4 font-medium">Ketua RT</th>
                         <th class="px-6 py-4 font-medium text-right">KK</th>
                         <th class="px-6 py-4 font-medium text-right">Jiwa</th>

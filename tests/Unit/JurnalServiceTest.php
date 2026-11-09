@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Exceptions\Finance\AkunTidakDitemukanException;
 use App\Exceptions\Finance\JurnalSudahDibalikException;
 use App\Exceptions\Finance\JurnalTidakBalanceException;
 use App\Exceptions\Finance\PeriodeTutupException;
@@ -9,6 +10,8 @@ use App\Models\Akuntansi\JurnalHeader;
 use App\Models\Tenant\Entitas;
 use App\Models\Tenant\PeriodeAkuntansi;
 use App\Services\Finance\JurnalService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Tests\TestCase;
 
@@ -270,6 +273,128 @@ class JurnalServiceTest extends TestCase
         // Posting kedua dengan source_id sama â†’ aman dan idempoten (mengembalikan jurnal yang sama)
         $second = $this->service->postingManual($params, $baris);
         $this->assertEquals($first->id_jurnal, $second->id_jurnal);
+    }
+
+    // =========================================================================
+    // TEST: Defense in depth — isolasi entitas pada jurnal pembalik & kas/bank
+    // =========================================================================
+
+    /** Buat entitas kedua (Desa B) untuk skenario lintas tenant. */
+    private function buatEntitasLain(): int
+    {
+        $sfx = uniqid();
+        $idWilayah = \DB::table('wilayah')->insertGetId([
+            'tingkat' => 'desa', 'nama' => 'Desa Lain ' . $sfx, 'created_at' => now(),
+        ]);
+
+        return \DB::table('entitas')->insertGetId([
+            'kode_entitas'    => 'KL-' . $sfx,
+            'nama_entitas'    => 'Koperasi Lain',
+            'id_wilayah'      => $idWilayah,
+            'tahun_buku_awal' => 2026,
+            'is_active'       => 1,
+            'created_at'      => now(),
+        ]);
+    }
+
+    private function postingJurnalContoh(): JurnalHeader
+    {
+        return $this->service->postingManual(
+            header: [
+                'tanggal_jurnal' => '2026-08-12',
+                'jenis_jurnal'   => 'MANUAL',
+                'keterangan'     => 'Jurnal milik Desa A',
+            ],
+            baris: [
+                ['kode_anak' => '111', 'posisi' => 'D', 'nilai' => 50000],
+                ['kode_anak' => '411', 'posisi' => 'K', 'nilai' => 50000],
+            ]
+        );
+    }
+
+    /**
+     * @test
+     * User Desa B tidak boleh membalik jurnal milik Desa A (ditolak di PHP).
+     */
+    public function balik_ditolak_jika_jurnal_milik_entitas_lain(): void
+    {
+        $jurnal = $this->postingJurnalContoh();
+        $idDesaB = $this->buatEntitasLain();
+
+        // Pindah konteks ke Desa B
+        app()->instance('entitas_aktif', $idDesaB);
+        app()->instance('koperasi_aktif', $idDesaB);
+
+        try {
+            $this->service->balik($jurnal->id_jurnal, 'Coba balik jurnal desa lain');
+            $this->fail('Seharusnya ModelNotFoundException.');
+        } catch (ModelNotFoundException) {
+            // sesuai harapan
+        }
+
+        $this->assertEquals(
+            'POSTED',
+            JurnalHeader::withoutGlobalScopes()->find($jurnal->id_jurnal)->status,
+            'Jurnal Desa A tidak boleh berubah.'
+        );
+    }
+
+    /**
+     * @test
+     * Lapisan terakhir: SP sendiri menolak bila p_id_entitas bukan pemilik jurnal,
+     * walaupun pemanggil melewati validasi PHP.
+     */
+    public function sp_pembalik_menolak_entitas_yang_tidak_cocok(): void
+    {
+        $jurnal = $this->postingJurnalContoh();
+        $idDesaB = $this->buatEntitasLain();
+
+        try {
+            \DB::select('CALL sp_jurnal_pembalik(?, ?, ?, ?)', [
+                $jurnal->id_jurnal, $idDesaB, 1, 'Panggilan langsung ke SP',
+            ]);
+            $this->fail('Seharusnya SP melempar error.');
+        } catch (QueryException $e) {
+            $this->assertStringContainsString('Jurnal tidak ditemukan', $e->getMessage());
+        }
+
+        $this->assertEquals('POSTED', JurnalHeader::withoutGlobalScopes()->find($jurnal->id_jurnal)->status);
+        $this->assertEquals(0, JurnalHeader::withoutGlobalScopes()->where('id_jurnal_asal', $jurnal->id_jurnal)->count());
+    }
+
+    /**
+     * @test
+     * posting() menolak id_kas_bank milik entitas lain, walaupun ID-nya ada.
+     */
+    public function posting_menolak_kas_bank_milik_entitas_lain(): void
+    {
+        $idDesaB = $this->buatEntitasLain();
+
+        $idKasDesaB = \DB::table('master_kas_bank')->insertGetId([
+            'id_entitas' => $idDesaB,
+            'nama'       => 'Kas Desa B',
+            'jenis'      => 'kas',
+            'kode_akun'  => '111',
+            'is_active'  => 1,
+        ]);
+
+        \DB::table('master_transaksi')->insertOrIgnore([
+            'kode_transaksi' => 'TST', 'nama_transaksi' => 'Test Kas', 'modul' => 'test', 'is_active' => 1,
+        ]);
+
+        \DB::table('master_detail_transaksi')->insert([
+            ['kode_transaksi' => 'TST', 'urutan' => 1, 'posisi' => 'D', 'akun_dinamis' => 'KAS_BANK', 'kode_anak' => null, 'sumber_variabel' => 'nilai'],
+            ['kode_transaksi' => 'TST', 'urutan' => 2, 'posisi' => 'K', 'akun_dinamis' => null, 'kode_anak' => '411', 'sumber_variabel' => 'nilai'],
+        ]);
+
+        $this->expectException(AkunTidakDitemukanException::class);
+
+        // Konteks tetap Desa A, tapi menyelipkan kas milik Desa B
+        $this->service->posting('TST', [
+            'tanggal_jurnal' => '2026-08-15',
+            'nilai'          => 10000,
+            'id_kas_bank'    => $idKasDesaB,
+        ], 'Test', 1);
     }
 }
 

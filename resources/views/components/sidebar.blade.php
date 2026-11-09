@@ -12,11 +12,14 @@
             'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>',
             'match' => 'master.*',
             'items' => [
-                ['label' => 'Entitas', 'route' => 'master.entitas.index', 'match' => 'master.entitas.*'],
+                ['label' => 'Entitas', 'route' => 'master.entitas.index', 'match' => 'master.entitas.*', 'super_admin_only' => true],
                 ['label' => 'Komoditas', 'route' => 'master.komoditas.index', 'match' => 'master.komoditas.*'],
+                ['label' => 'Satuan Ukur', 'route' => 'master.satuan.index', 'match' => 'master.satuan.*'],
                 ['label' => 'Barang', 'route' => 'master.barang.index', 'match' => 'master.barang.*'],
                 ['label' => 'Pihak/Mitra', 'route' => 'master.pihak.index', 'match' => 'master.pihak.*'],
+                ['label' => 'Gudang', 'route' => 'master.gudang.index', 'match' => 'master.gudang.*'],
                 ['label' => 'Kas & Bank', 'route' => 'master.kas-bank.index', 'match' => 'master.kas-bank.*'],
+                ['label' => 'Periode Akuntansi', 'route' => 'master.periode.index', 'match' => 'master.periode.*'],
                 ['label' => 'Chart of Accounts', 'route' => 'master.coa.index', 'match' => 'master.coa.*'],
             ]
         ],
@@ -38,11 +41,11 @@
             'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>',
             'match' => 'perencanaan.*',
             'items' => [
-                ['label' => 'Demografi', 'route' => 'perencanaan.demografi.index', 'match' => 'perencanaan.demografi.*'],
-                ['label' => 'Potensi Produksi', 'route' => 'perencanaan.potensi-produksi.index', 'match' => 'perencanaan.potensi-produksi.*'],
-                ['label' => 'Standar Kebutuhan', 'route' => 'perencanaan.standar-kebutuhan.index', 'match' => 'perencanaan.standar-kebutuhan.*'],
-                ['label' => 'Kebutuhan Komoditas', 'route' => 'perencanaan.kebutuhan-komoditas.index', 'match' => 'perencanaan.kebutuhan-komoditas.*'],
-                ['label' => 'Neraca Komoditas', 'route' => 'perencanaan.neraca-komoditas.index', 'match' => 'perencanaan.neraca-komoditas.*'],
+                ['label' => 'Dashboard Kalkulasi dan Perencanaan', 'route' => 'perencanaan.dashboard', 'match' => 'perencanaan.dashboard'],
+                ['label' => 'Data & Parameter', 'route' => 'perencanaan.demografi.index', 'match' => 'perencanaan.demografi.*,perencanaan.potensi-produksi.*,perencanaan.standar-kebutuhan.*'],
+                ['label' => 'Kalkulasi Kebutuhan', 'route' => 'perencanaan.kebutuhan-komoditas.index', 'match' => 'perencanaan.kebutuhan-komoditas.*'],
+                ['label' => 'Surplus Defisit', 'route' => 'perencanaan.neraca-komoditas.index', 'match' => 'perencanaan.neraca-komoditas.*'],
+                ['label' => 'Laporan Kalkulasi', 'route' => 'perencanaan.laporan.index', 'match' => 'perencanaan.laporan.*'],
                 ['label' => 'Permintaan Pengadaan', 'route' => 'perencanaan.permintaan-pengadaan.index', 'match' => 'perencanaan.permintaan-pengadaan.*'],
                 ['label' => 'Perbandingan Harga', 'route' => 'perencanaan.perbandingan-harga.index', 'match' => 'perencanaan.perbandingan-harga.*'],
             ]
@@ -55,6 +58,7 @@
                 ['label' => 'Dashboard Gudang', 'route' => 'gudang.index', 'match' => 'gudang.index'],
                 ['label' => 'Posisi Stok', 'route' => 'gudang.stok.index', 'match' => 'gudang.stok.*'],
                 ['label' => 'Penerimaan', 'route' => 'gudang.penerimaan.index', 'match' => 'gudang.penerimaan.*'],
+                ['label' => 'Batch & Kedaluwarsa', 'route' => 'gudang.batch.index', 'match' => 'gudang.batch.*'],
                 ['label' => 'Kerusakan', 'route' => 'gudang.kerusakan.index', 'match' => 'gudang.kerusakan.*'],
                 ['label' => 'Stock Opname', 'route' => 'gudang.opname.index', 'match' => 'gudang.opname.*'],
                 ['label' => 'Kartu Stok', 'route' => 'gudang.kartu-stok.index', 'match' => 'gudang.kartu-stok.*'],
@@ -195,24 +199,70 @@
                     >
                         <ul class="space-y-1 py-1 pl-11 pr-2 relative before:absolute before:left-[1.375rem] before:top-2 before:bottom-2 before:w-px before:bg-ink-800">
                             @foreach($group['items'] as $item)
-                                @if (
-                                    $isModuleLimitedUser
-                                    && !(($isPurchasingUser && str_starts_with($item['route'], 'pembelian.'))
-                                        || ($isSalesUser && str_starts_with($item['route'], 'penjualan.')))
-                                )
-                                    @continue
-                                @endif
+                                @continue(! empty($item['super_admin_only']) && auth()->user()?->id_entitas !== null)
                                 @php
+                                    $hasChildren = ! empty($item['children']);
                                     $isItemActive = collect(explode(',', $item['match']))->contains(fn ($p) => request()->routeIs($p));
+                                    $isChildActive = $hasChildren && collect($item['children'])->contains(function ($child) {
+                                        return collect(explode(',', $child['match']))->contains(fn ($p) => request()->routeIs($p))
+                                            || (! empty($child['children']) && collect($child['children'])->contains(fn ($grandchild) => collect(explode(',', $grandchild['match']))->contains(fn ($p) => request()->routeIs($p))));
+                                    });
                                 @endphp
                                 <li>
-                                    <a 
-                                        href="{{ route($item['route']) }}" 
-                                        class="block rounded-lg px-3 py-2 text-xs transition-colors
-                                        {{ $isItemActive ? 'bg-padi-500/10 text-padi-400 font-medium relative before:absolute before:-left-[0.8125rem] before:top-1/2 before:-translate-y-1/2 before:w-[5px] before:h-[5px] before:rounded-full before:bg-padi-400' : 'text-paper-400 hover:bg-ink-800 hover:text-white' }}"
-                                    >
-                                        {{ $item['label'] }}
-                                    </a>
+                                    @if ($hasChildren)
+                                        <div x-data="{ expanded: {{ ($isChildActive || $isItemActive) ? 'true' : 'false' }} }">
+                                            <div class="flex items-center rounded-lg text-xs transition-colors
+                                                {{ ($isChildActive || $isItemActive) ? 'bg-padi-500/10 text-padi-400 font-medium' : 'text-paper-400 hover:bg-ink-800 hover:text-white' }}">
+                                                <a href="{{ route($item['route']) }}" class="min-w-0 flex-1 px-3 py-2">
+                                                    {{ $item['label'] }}
+                                                </a>
+                                                <button type="button" @click="expanded = !expanded" class="px-3 py-2 text-paper-500 hover:text-white" aria-label="Buka submenu {{ $item['label'] }}">
+                                                    <svg class="h-3.5 w-3.5 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            <div x-show="expanded" x-transition x-cloak class="ml-3 mt-1 border-l border-ink-800 pl-2">
+                                                <ul class="space-y-1">
+                                                    @foreach ($item['children'] as $child)
+                                                        @php
+                                                            $childHasChildren = ! empty($child['children']);
+                                                            $childActive = collect(explode(',', $child['match']))->contains(fn ($p) => request()->routeIs($p));
+                                                            $grandchildActive = $childHasChildren && collect($child['children'])->contains(fn ($grandchild) => collect(explode(',', $grandchild['match']))->contains(fn ($p) => request()->routeIs($p)));
+                                                        @endphp
+                                                        <li>
+                                                            @if ($childHasChildren)
+                                                                <div x-data="{ expanded: {{ ($childActive || $grandchildActive) ? 'true' : 'false' }} }">
+                                                                    <div class="flex items-center rounded-md {{ ($childActive || $grandchildActive) ? 'bg-ink-800 text-padi-400 font-medium' : 'text-paper-400 hover:bg-ink-800 hover:text-white' }}">
+                                                                        <a href="{{ route($child['route']) }}" class="min-w-0 flex-1 px-2.5 py-1.5">{{ $child['label'] }}</a>
+                                                                        <button type="button" @click="expanded = !expanded" class="px-2 py-1.5 text-paper-500 hover:text-white" aria-label="Buka submenu {{ $child['label'] }}">
+                                                                            <svg class="h-3 w-3 transition-transform" :class="expanded ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" /></svg>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div x-show="expanded" x-transition x-cloak class="ml-3 mt-1 border-l border-ink-800 pl-2">
+                                                                        @foreach ($child['children'] as $grandchild)
+                                                                            <a href="{{ route($grandchild['route']) }}" class="block rounded-md px-2.5 py-1.5 text-[11px] transition-colors {{ request()->routeIs($grandchild['match']) ? 'bg-padi-500/10 text-padi-400 font-medium' : 'text-paper-500 hover:bg-ink-800 hover:text-white' }}">
+                                                                                {{ $grandchild['label'] }}
+                                                                            </a>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
+                                                            @else
+                                                                <a href="{{ route($child['route']) }}" class="block rounded-md px-2.5 py-1.5 text-[11px] transition-colors {{ $childActive ? 'bg-ink-800 text-padi-400 font-medium' : 'text-paper-400 hover:bg-ink-800 hover:text-white' }}">
+                                                                    {{ $child['label'] }}
+                                                                </a>
+                                                            @endif
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <a href="{{ route($item['route']) }}" class="block rounded-lg px-3 py-2 text-xs transition-colors {{ $isItemActive ? 'bg-padi-500/10 text-padi-400 font-medium relative before:absolute before:-left-[0.8125rem] before:top-1/2 before:-translate-y-1/2 before:w-[5px] before:h-[5px] before:rounded-full before:bg-padi-400' : 'text-paper-400 hover:bg-ink-800 hover:text-white' }}">
+                                            {{ $item['label'] }}
+                                        </a>
+                                    @endif
                                 </li>
                             @endforeach
                         </ul>

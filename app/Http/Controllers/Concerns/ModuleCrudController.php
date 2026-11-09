@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -60,7 +61,13 @@ abstract class ModuleCrudController extends Controller
             'title' => $this->title,
             'routeBase' => $this->routeBase,
             'columns' => $this->displayColumns(),
+            'canEdit' => fn (Model $item): bool => $this->canEdit($item),
         ]);
+    }
+
+    protected function canEdit(Model $item): bool
+    {
+        return true;
     }
 
     public function show(int|string $id): View

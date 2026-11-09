@@ -10,6 +10,8 @@ use App\Models\Akuntansi\JurnalDetail;
 use App\Models\Akuntansi\JurnalHeader;
 use App\Models\Akuntansi\MasterDetailTransaksi;
 use App\Models\Master\KasBank;
+use App\Scopes\EntitasScope;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -90,7 +92,7 @@ class JurnalService
         }
 
         // --- LANGKAH 2 & 3: Resolve akun dinamis + hitung nilai ---
-        $baris = $this->resolveBarisJurnal($template, $payload);
+        $baris = $this->resolveBarisJurnal($template, $payload, $this->getEntitasAktif($entitasId));
 
         // --- LANGKAH 4: Validasi balance Debit = Kredit ---
         $totalDebit  = array_sum(array_column($baris, 'debet'));
@@ -188,15 +190,31 @@ class JurnalService
      * Setiap baris debet menjadi kredit dan sebaliknya.
      * Jurnal asli ditandai REVERSED.
      *
+     * @param  int|null  $entitasId  Entitas pemanggil. Default: entitas aktif di session.
+     *
      * @throws JurnalSudahDibalikException  jika jurnal sudah pernah dibalik
      * @throws \InvalidArgumentException    jika jurnal bukan berstatus POSTED
+     * @throws ModelNotFoundException       jika jurnal tidak ada / milik entitas lain
      */
-    public function balik(int $idJurnal, string $alasan): JurnalHeader
+    public function balik(int $idJurnal, string $alasan, ?int $entitasId = null): JurnalHeader
     {
-        return DB::transaction(function () use ($idJurnal, $alasan) {
+        return DB::transaction(function () use ($idJurnal, $alasan, $entitasId) {
             // 1. Validasi awal di level PHP. lockForUpdate: dua user yang
             //    menekan "Balik" bersamaan akan antre, yang kedua pasti gagal.
             $jurnalAsal = JurnalHeader::lockForUpdate()->findOrFail($idJurnal);
+
+            // Defense in depth: jangan hanya mengandalkan EntitasScope.
+            // Jika pemanggil terikat entitas, jurnal WAJIB milik entitas itu.
+            // Dilempar sebagai "tidak ditemukan" agar tidak membocorkan
+            // keberadaan jurnal milik desa lain.
+            $entitasPemanggil = $this->getEntitasAktif($entitasId);
+            if ($entitasPemanggil !== null && (int) $jurnalAsal->id_entitas !== $entitasPemanggil) {
+                throw (new ModelNotFoundException())->setModel(JurnalHeader::class, [$idJurnal]);
+            }
+
+            // Mulai titik ini semua operasi memakai entitas PEMILIK jurnal,
+            // bukan entitas session (penting untuk superadmin mode konsolidasi).
+            $idEntitasJurnal = (int) $jurnalAsal->id_entitas;
 
             $sudahDibalik = JurnalHeader::where('id_jurnal_asal', $idJurnal)->first();
             if ($sudahDibalik) {
@@ -211,11 +229,13 @@ class JurnalService
 
             $tanggalPembalik = now()->toDateString();
             [$tahun, $bulan] = $this->parsePeriode($tanggalPembalik);
-            $this->pastikanPeriodeTerbuka($tahun, $bulan);
+            $this->pastikanPeriodeTerbuka($tahun, $bulan, $idEntitasJurnal);
 
-            // 2. Eksekusi Stored Procedure (ikut transaksi ini, tanpa COMMIT sendiri)
-            $result = DB::select('CALL sp_jurnal_pembalik(?, ?, ?)', [
+            // 2. Eksekusi Stored Procedure (ikut transaksi ini, tanpa COMMIT sendiri).
+            //    SP ikut memvalidasi id_entitas sebagai lapisan pertahanan terakhir.
+            $result = DB::select('CALL sp_jurnal_pembalik(?, ?, ?, ?)', [
                 $idJurnal,
+                $idEntitasJurnal,
                 Auth::id() ?? 1,
                 $alasan,
             ]);
@@ -323,7 +343,7 @@ class JurnalService
      *
      * Ini adalah inti logika "resolver akun dinamis".
      */
-    private function resolveBarisJurnal($template, array $payload): array
+    private function resolveBarisJurnal($template, array $payload, ?int $entitasId = null): array
     {
         // Cache unit usaha dan kas bank agar tidak query berulang di setiap baris
         $unitUsaha = null;
@@ -343,12 +363,18 @@ class JurnalService
         }
 
         if (isset($payload['id_kas_bank'])) {
-            $kasBank = KasBank::find($payload['id_kas_bank']);
+            // Kas/bank WAJIB milik entitas yang jurnalnya sedang diposting.
+            // Tidak memakai EntitasScope (yang mengikuti entitas session) karena
+            // entitas posting bisa berbeda, mis. konsinyasi diposting ke desa pemilik.
+            $kasBank = KasBank::withoutGlobalScope(EntitasScope::class)
+                ->where('id_kas_bank', $payload['id_kas_bank'])
+                ->when($entitasId !== null, fn ($q) => $q->where('id_entitas', $entitasId))
+                ->first();
 
             if (!$kasBank) {
                 throw new AkunTidakDitemukanException(
                     'KAS_BANK',
-                    "id_kas_bank [{$payload['id_kas_bank']}] tidak ditemukan"
+                    "id_kas_bank [{$payload['id_kas_bank']}] tidak ditemukan atau bukan milik entitas [{$entitasId}]"
                 );
             }
         }
@@ -543,6 +569,12 @@ class JurnalService
     ): JurnalHeader {
         $entitasId = $this->getEntitasAktif($entitasId);
 
+        // Jurnal tanpa entitas tidak boleh ditulis (mis. superadmin mode
+        // konsolidasi yang belum memilih entitas).
+        if ($entitasId === null) {
+            throw new \RuntimeException('Entitas aktif belum dipilih. Pilih entitas sebelum memposting jurnal.');
+        }
+
         try {
             return DB::transaction(function () use ($tahun, $bulan, $header, $baris, $entitasId) {
                 $noJurnal    = $this->generateNomorJurnal($tahun, $bulan, $entitasId);
@@ -647,12 +679,13 @@ class JurnalService
             return $entitasId;
         }
 
-        if (app()->bound('entitas_aktif')) {
-            return (int) app('entitas_aktif');
-        }
-
-        if (app()->bound('koperasi_aktif')) {
-            return (int) app('koperasi_aktif');
+        // SetEntitasAktif selalu bind 'entitas_aktif' walau nilainya null
+        // (superadmin mode konsolidasi). Jangan di-cast: (int) null = 0 akan
+        // terlihat seperti ID entitas yang valid.
+        foreach (['entitas_aktif', 'koperasi_aktif'] as $binding) {
+            if (app()->bound($binding) && app($binding) !== null) {
+                return (int) app($binding);
+            }
         }
 
         return null;

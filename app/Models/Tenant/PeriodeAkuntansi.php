@@ -2,10 +2,13 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Concerns\BelongsToEntitas;
 use Illuminate\Database\Eloquent\Model;
 
 class PeriodeAkuntansi extends Model
 {
+    use BelongsToEntitas;
+
     protected $table = 'periode_akuntansi';
     protected $primaryKey = 'id_periode';
     public $timestamps = false;
@@ -22,4 +25,3 @@ class PeriodeAkuntansi extends Model
         return $this->belongsTo(Entitas::class, 'id_entitas', 'id_entitas');
     }
 }
-

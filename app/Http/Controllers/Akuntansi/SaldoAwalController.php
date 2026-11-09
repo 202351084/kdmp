@@ -43,12 +43,20 @@ class SaldoAwalController extends Controller
         $idEntitas = app('entitas_aktif');
         $tahun     = (int) $request->query('tahun', date('Y'));
 
+        $bankMap = Coa::bankMapForEntitas($idEntitas);
+
         // Semua akun leaf aktif untuk dropdown pilih akun
         $akunList = Coa::where('is_transaction', 'T')
             ->where('is_active', true)
             ->orderBy('urutan_laporan')
             ->orderBy('kode_anak')
-            ->get(['kode_anak', 'nama_rekening', 'kelompok', 'posisi_normal']);
+            ->get(['kode_anak', 'nama_rekening', 'kelompok', 'posisi_normal'])
+            ->map(function ($akun) use ($bankMap) {
+                if (isset($bankMap[$akun->kode_anak])) {
+                    $akun->nama_rekening = $bankMap[$akun->kode_anak]->nama;
+                }
+                return $akun;
+            });
 
         $saldoTersimpan  = collect();
         $sudahAdaJurnal  = false;
@@ -84,7 +92,10 @@ class SaldoAwalController extends Controller
                         'jd.kredit',
                     ])
                     ->get()
-                    ->map(function ($row) {
+                    ->map(function ($row) use ($bankMap) {
+                        if (isset($bankMap[$row->kode_anak])) {
+                            $row->nama_rekening = $bankMap[$row->kode_anak]->nama;
+                        }
                         $row->saldo = ($row->posisi_normal === 'D')
                             ? (float) $row->debet - (float) $row->kredit
                             : (float) $row->kredit - (float) $row->debet;

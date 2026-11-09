@@ -412,12 +412,8 @@ class PembelianController extends ModuleCrudController
             ?? (app()->bound('entitas_aktif') ? app('entitas_aktif') : null)
             ?? \App\Models\Tenant\Entitas::value('id_entitas');
 
-        $pihakQuery = Pihak::when($idEntitas, fn ($q) => $q->where('id_entitas', $idEntitas));
-        if ($pembelian->sumber_pembelian === 'pengambilan_konsinyasi') {
-            $pihakQuery->where('jenis_pihak', 'entitas_lain')->whereNotNull('id_entitas_mitra');
-        }
-        $pihaks = $pihakQuery->get();
-        $barangs = Barang::with(['unitUsaha', 'satuanDasar', 'konversiSatuan.satuan'])
+        $pihaks = Pihak::when($idEntitas, fn ($q) => $q->where('id_entitas', $idEntitas))->get();
+        $barangs = Barang::with(['unitUsaha', 'satuanDasar', 'konversiSatuan.satuan'])->forEntitas($idEntitas)
             ->where('is_active', true)
             ->orderBy('nama_barang')
             ->get();

@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Gudang\GudangDashboardController;
+use App\Http\Controllers\Gudang\BatchController;
 use App\Http\Controllers\Gudang\KartuStokController;
 use App\Http\Controllers\Gudang\KerusakanBarangController;
 use App\Http\Controllers\Gudang\OpnameController;
@@ -40,8 +41,10 @@ use App\Http\Controllers\Pembelian\PembelianController;
 use App\Http\Controllers\Pembelian\ReturPembelianController;
 use App\Http\Controllers\Penjualan\PenjualanController;
 use App\Http\Controllers\Penjualan\ReturPenjualanController;
+use App\Http\Controllers\Perencanaan\DashboardM2Controller;
 use App\Http\Controllers\Perencanaan\DemografiController;
 use App\Http\Controllers\Perencanaan\KebutuhanKomoditasController;
+use App\Http\Controllers\Perencanaan\LaporanM2Controller;
 use App\Http\Controllers\Perencanaan\NeracaKomoditasController;
 use App\Http\Controllers\Perencanaan\PerbandinganHargaController;
 use App\Http\Controllers\Perencanaan\PermintaanPengadaanController;
@@ -77,14 +80,19 @@ Route::middleware('auth')->group(function () {
 
     // ===== M0 â€” Master & Periode =====
     Route::prefix('master')->name('master.')->group(function () {
-        Route::resource('entitas', EntitasController::class);
+        // Daftar seluruh entitas (lintas desa) hanya untuk super admin.
+        Route::resource('entitas', EntitasController::class)->middleware('super_admin');
         Route::resource('komoditas', KomoditasController::class);
         Route::resource('satuan', SatuanController::class);
+        Route::get('barang/stok-minimum', [\App\Http\Controllers\Master\StokMinimumBarangController::class, 'index'])
+            ->name('barang.stok-minimum.index');
+        Route::patch('barang/stok-minimum/{idBarang}', [\App\Http\Controllers\Master\StokMinimumBarangController::class, 'update'])
+            ->name('barang.stok-minimum.update');
         Route::resource('barang', BarangController::class);
         Route::resource('pihak', PihakController::class);
         Route::resource('kas-bank', KasBankController::class);
         Route::resource('gudang', MasterGudangController::class);
-        Route::resource('periode', PeriodeController::class)->only(['index', 'edit', 'update']);
+        Route::resource('periode', PeriodeController::class)->only(['index', 'store', 'edit', 'update']);
         Route::resource('coa', CoaController::class);
     });
 
@@ -92,20 +100,31 @@ Route::middleware('auth')->group(function () {
 
     // ===== M2/M3 â€” Kalkulasi Kebutuhan & Perencanaan =====
     Route::prefix('perencanaan')->name('perencanaan.')->group(function () {
+        Route::get('dashboard', [DashboardM2Controller::class, 'index'])->name('dashboard');
         Route::resource('demografi', DemografiController::class);
         Route::resource('potensi-produksi', PotensiProduksiController::class);
+        Route::post('potensi-produksi/komoditas', [PotensiProduksiController::class, 'storeKomoditas'])
+            ->name('potensi-produksi.komoditas.store');
         Route::resource('standar-kebutuhan', StandarKebutuhanController::class);
+        Route::post('kebutuhan-komoditas/kalkulasi', [KebutuhanKomoditasController::class, 'kalkulasi'])
+            ->name('kebutuhan-komoditas.kalkulasi');
         Route::resource('kebutuhan-komoditas', KebutuhanKomoditasController::class)
             ->only(['index', 'show']);
         Route::resource('neraca-komoditas', NeracaKomoditasController::class)
             ->only(['index', 'show']);
+        Route::post('neraca-komoditas/{hasil}/ajukan-ke-gudang', [NeracaKomoditasController::class, 'ajukanKeGudang'])
+            ->name('neraca-komoditas.ajukan-ke-gudang');
+        Route::get('laporan', [LaporanM2Controller::class, 'index'])->name('laporan.index');
         Route::resource('perbandingan-harga', PerbandinganHargaController::class);
+        Route::get('permintaan-pengadaan/from-hasil/{hasil}', [PermintaanPengadaanController::class, 'fromHasil'])
+            ->name('permintaan-pengadaan.from-hasil');
         Route::resource('permintaan-pengadaan', PermintaanPengadaanController::class);
     });
 
     // ===== M4 â€” Gudang =====
     Route::prefix('gudang')->name('gudang.')->group(function () {
         Route::get('/', [GudangDashboardController::class, 'index'])->name('index');
+        Route::get('batch', [BatchController::class, 'index'])->name('batch.index');
         Route::resource('penerimaan', PenerimaanBarangController::class);
         Route::resource('opname', OpnameController::class);
         Route::resource('kerusakan', KerusakanBarangController::class);

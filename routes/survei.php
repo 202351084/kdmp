@@ -108,6 +108,7 @@ Route::middleware('auth')->group(function () use ($cSurvei) {
 
         // ─── Card 1: Daftar Sesi Survei ───
         Route::resource('sesi', $cSurvei . 'SesiSurveiController');
+        Route::post('sesi/{sesi}/sinkron', [$cSurvei . 'SesiSurveiController', 'sinkron'])->name('sesi.sinkron');
 
         // ─── Card 2: Master & Baseline Data RT ───
         $cRt = class_exists(\App\Http\Controllers\Survei\RtDesaController::class)

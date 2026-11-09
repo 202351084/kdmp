@@ -92,7 +92,11 @@ class LaporanController extends Controller
             ->get();
 
         // Hitung saldo normal per akun (untuk tampilan "saldo bersih")
-        $rows = $rows->map(function ($row) {
+        $bankMap = Coa::bankMapForEntitas($idEntitas);
+        $rows = $rows->map(function ($row) use ($bankMap) {
+            if (isset($bankMap[$row->kode_anak])) {
+                $row->nama_rekening = $bankMap[$row->kode_anak]->nama;
+            }
             if ($row->posisi_normal === 'D') {
                 $row->saldo_normal = $row->saldo_akhir_debet - $row->saldo_akhir_kredit;
                 $row->saldo_d = max(0, $row->saldo_normal);
@@ -135,7 +139,14 @@ class LaporanController extends Controller
             ->where('is_active', true)
             ->orderBy('urutan_laporan')
             ->orderBy('kode_anak')
-            ->get(['kode_anak', 'nama_rekening', 'kelompok', 'posisi_normal']);
+            ->get(['kode_anak', 'nama_rekening', 'kelompok', 'posisi_normal'])
+            ->map(function ($akun) use ($idEntitas) {
+                $bankMap = Coa::bankMapForEntitas($idEntitas);
+                if (isset($bankMap[$akun->kode_anak])) {
+                    $akun->nama_rekening = $bankMap[$akun->kode_anak]->nama;
+                }
+                return $akun;
+            });
 
         $mutasi      = collect();
         $saldoAwal   = 0;
@@ -243,7 +254,11 @@ class LaporanController extends Controller
                 DB::raw('SUM(bbp.mutasi_kredit) as mutasi_kredit'),
             ])
             ->get()
-            ->map(function ($row) {
+            ->map(function ($row) use ($idEntitas) {
+                $bankMap = Coa::bankMapForEntitas($idEntitas);
+                if (isset($bankMap[$row->kode_anak])) {
+                    $row->nama_rekening = $bankMap[$row->kode_anak]->nama;
+                }
                 // Saldo normal = nilai yang "wajar" untuk kelompok ini
                 $row->nilai = ($row->posisi_normal === 'K')
                     ? (float) $row->mutasi_kredit - (float) $row->mutasi_debet
@@ -328,7 +343,11 @@ class LaporanController extends Controller
                 'bbp.saldo_akhir_kredit',
             ])
             ->get()
-            ->map(function ($row) {
+            ->map(function ($row) use ($idEntitas) {
+                $bankMap = Coa::bankMapForEntitas($idEntitas);
+                if (isset($bankMap[$row->kode_anak])) {
+                    $row->nama_rekening = $bankMap[$row->kode_anak]->nama;
+                }
                 $row->saldo = ($row->posisi_normal === 'D')
                     ? (float) $row->saldo_akhir_debet - (float) $row->saldo_akhir_kredit
                     : (float) $row->saldo_akhir_kredit - (float) $row->saldo_akhir_debet;

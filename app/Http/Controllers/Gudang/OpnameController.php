@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Gudang;
 use App\Http\Controllers\Concerns\ModuleCrudController;
 use App\Models\Gudang\OpnameDetail;
 use App\Models\Gudang\OpnameHeader;
-use App\Models\Gudang\Stok;
 use App\Models\Master\Barang;
 use App\Models\Master\Gudang;
+use App\Services\StokService;
+use App\Services\StokBatchService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,8 +71,8 @@ class OpnameController extends ModuleCrudController
             'kode_opname' => ['required', 'string', 'max:30'],
             'tanggal' => ['required', 'date'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.id_barang' => ['required', 'integer', 'exists:master_barang,id_barang'],
-            'items.*.qty_fisik' => ['required', 'numeric', 'gte:0'],
+            'items.*.id_barang' => ['required', 'integer', 'distinct', 'exists:master_barang,id_barang'],
+            'items.*.qty_fisik' => ['required', 'numeric', 'regex:/^\d{1,14}(?:\.\d{1,4})?$/', 'gte:0'],
             'items.*.keterangan' => ['nullable', 'string'],
         ]);
 
@@ -81,50 +82,47 @@ class OpnameController extends ModuleCrudController
                 'id_gudang' => $data['id_gudang'],
                 'kode_opname' => $data['kode_opname'],
                 'tanggal' => $data['tanggal'],
-                'status' => 'dihitung',
+                'status' => 'diposting',
                 'approved_by' => null,
             ]);
 
+            $stokService = app(StokService::class);
+            $stokBatchService = app(StokBatchService::class);
+
             foreach ($data['items'] as $item) {
                 $barangId = (int) $item['id_barang'];
-                $qtySistem = Stok::query()
-                    ->where('id_gudang', $data['id_gudang'])
-                    ->where('id_barang', $barangId)
-                    ->value('qty_on_hand') ?? '0';
-
                 $qtyFisik = (string) $item['qty_fisik'];
-                $selisih = bcsub($qtyFisik, (string) $qtySistem, 4);
-                $hpp = Stok::query()
-                    ->where('id_gudang', $data['id_gudang'])
-                    ->where('id_barang', $barangId)
-                    ->value('hpp_rata2') ?? '0';
-                $nilaiSelisih = bcmul($selisih, $hpp, 2);
+                $hasilOpname = $stokService->sesuaikanOpname(
+                    entitasId: (int) ($header->id_entitas ?? app('entitas_aktif')),
+                    gudangId: (int) $data['id_gudang'],
+                    barangId: $barangId,
+                    qtyFisik: $qtyFisik,
+                    opnameId: (int) $header->id_opname,
+                    createdBy: auth()->id(),
+                );
 
-                OpnameDetail::query()->create([
+                $detail = OpnameDetail::query()->create([
                     'id_opname' => $header->id_opname,
                     'id_barang' => $barangId,
-                    'qty_sistem' => $qtySistem,
+                    'qty_sistem' => $hasilOpname['qty_sistem'],
                     'qty_fisik' => $qtyFisik,
-                    'selisih' => $selisih,
-                    'hpp_rata2' => $hpp,
-                    'nilai_selisih' => $nilaiSelisih,
+                    'selisih' => $hasilOpname['selisih'],
+                    'hpp_rata2' => $hasilOpname['hpp_rata2'],
+                    'nilai_selisih' => $hasilOpname['nilai_selisih'],
                     'keterangan' => $item['keterangan'] ?? null,
                 ]);
 
-                if ($selisih !== '0') {
-                    Stok::query()
-                        ->where('id_gudang', $data['id_gudang'])
-                        ->where('id_barang', $barangId)
-                        ->update([
-                            'qty_on_hand' => bcadd((string) ($qtySistem), $selisih, 4),
-                            'updated_at' => now(),
-                        ]);
-                }
+                $stokBatchService->catatPenyesuaianOpname(
+                    detailId: (int) $detail->id_detail,
+                    gudangId: (int) $data['id_gudang'],
+                    barangId: $barangId,
+                    qtySistem: $hasilOpname['qty_sistem'],
+                    qtyFisik: $qtyFisik,
+                    idKartu: $hasilOpname['id_kartu'],
+                );
             }
 
             return redirect()->route('gudang.opname.index')->with('success', 'Data opname berhasil disimpan.');
         });
     }
 }
-
-

@@ -30,7 +30,7 @@
             <thead>
                 <tr class="border-b border-paper-300 bg-paper-200/60 font-mono text-[11px] uppercase tracking-wide text-ink-600/70">
                     <th class="px-4 py-3 font-medium">Tanggal</th>
-                    <th class="px-4 py-3 font-medium">Barang</th>
+                    <th class="px-4 py-3 font-medium">Barang / Batch</th>
                     <th class="px-4 py-3 font-medium">Qty</th>
                     <th class="px-4 py-3 font-medium">Jenis</th>
                     <th class="px-4 py-3 font-medium">Nilai</th>
@@ -41,7 +41,12 @@
                 @forelse ($items as $item)
                     <tr class="border-b border-paper-200 last:border-0 hover:bg-paper-100/70">
                         <td class="px-4 py-3 text-ink-800">{{ $item->tanggal?->format('d M Y') }}</td>
-                        <td class="px-4 py-3 text-ink-800">{{ $item->barang->nama_barang ?? '-' }}</td>
+                        <td class="px-4 py-3 text-ink-800">
+                            {{ $item->barang->nama_barang ?? '-' }}
+                            @if ($item->relationLoaded('batch') && $item->batch)
+                                <span class="mt-1 block text-xs text-ink-600/60">Batch {{ $item->batch->kode_batch }}</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-ink-800">{{ $item->qty }}</td>
                         <td class="px-4 py-3 text-ink-800">{{ $item->jenis_kejadian }}</td>
                         <td class="px-4 py-3 text-ink-800">Rp {{ number_format((float) $item->nilai_kerugian, 2, ',', '.') }}</td>

@@ -4,6 +4,7 @@ namespace App\Models\Perencanaan;
 
 use App\Models\Master\Komoditas;
 use App\Models\Tenant\Wilayah;
+use App\Models\Perencanaan\StandarKebutuhanKomoditas;
 use Illuminate\Database\Eloquent\Model;
 
 /** Hasil kalkulasi disimpan sebagai SNAPSHOT, bukan dihitung ulang tiap dibuka. */
@@ -35,5 +36,10 @@ class KebutuhanKomoditas extends Model
     public function komoditas()
     {
         return $this->belongsTo(Komoditas::class, 'id_komoditas');
+    }
+
+    public function standar()
+    {
+        return $this->belongsTo(StandarKebutuhanKomoditas::class, 'id_standar');
     }
 }

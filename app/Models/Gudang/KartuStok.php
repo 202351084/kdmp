@@ -4,6 +4,7 @@ namespace App\Models\Gudang;
 
 use App\Models\Concerns\BelongsToEntitas;
 use App\Models\Master\Barang;
+use App\Models\Master\Gudang as GudangModel;
 use Illuminate\Database\Eloquent\Model;
 
 /** Append-only, kronologis. Backdate DILARANG â€” koreksi = mutasi baru hari ini. */
@@ -31,5 +32,9 @@ class KartuStok extends Model
     {
         return $this->belongsTo(Barang::class, 'id_barang', 'id_barang');
     }
-}
 
+    public function gudang()
+    {
+        return $this->belongsTo(GudangModel::class, 'id_gudang', 'id_gudang');
+    }
+}

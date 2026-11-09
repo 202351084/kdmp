@@ -13,7 +13,7 @@ class StandarKebutuhanKomoditas extends Model
 
     protected $fillable = [
         'sektor', 'id_komoditas', 'kelompok_umur', 'per_kapita_harian', 'satuan',
-        'sumber', 'berlaku_mulai', 'berlaku_sampai',
+        'satuan_periode', 'sumber', 'berlaku_mulai', 'berlaku_sampai',
     ];
 
     protected function casts(): array

@@ -32,7 +32,7 @@
 
             <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div>
-                    <label class="mb-2 block text-sm font-semibold text-ink-700">Nama RT</label>
+                    <label class="mb-2 block text-sm font-semibold text-ink-700">No RT</label>
                     <input type="text" name="nama_rt" required value="{{ old('nama_rt') }}" placeholder="Contoh: 01 atau RT 01" class="w-full rounded-sm border-paper-300 shadow-sm focus:border-merah-500 focus:ring-merah-500">
                     @error('nama_rt')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -40,7 +40,7 @@
                 </div>
 
                 <div>
-                    <label class="mb-2 block text-sm font-semibold text-ink-700">RW (Opsional)</label>
+                    <label class="mb-2 block text-sm font-semibold text-ink-700">No RW (Opsional)</label>
                     <input type="text" name="rw" value="{{ old('rw') }}" placeholder="Contoh: 02" class="w-full rounded-sm border-paper-300 shadow-sm focus:border-merah-500 focus:ring-merah-500">
                 </div>
 

@@ -46,7 +46,7 @@
                 <thead class="border-b border-paper-300 bg-paper-50 text-xs uppercase text-ink-700">
                     <tr>
                         <th class="px-6 py-4 font-medium" rowspan="2">Desa / Wilayah</th>
-                        <th class="px-6 py-4 font-medium" rowspan="2">Nama RT</th>
+                        <th class="px-6 py-4 font-medium" rowspan="2">No RT</th>
                         <th class="border-b border-paper-300 px-6 py-2 text-center font-medium" colspan="2">Data Baseline (RT)</th>
                         <th class="px-6 py-4 text-center font-medium" rowspan="2">Jiwa Terdata</th>
                         <th class="px-6 py-4 font-medium text-center" rowspan="2">Aksi</th>

@@ -31,4 +31,9 @@ class KetersediaanKomoditas extends Model
     {
         return $this->belongsTo(Komoditas::class, 'id_komoditas');
     }
+
+    public function sesiSurvei()
+    {
+        return $this->belongsTo(\App\Models\Survei\SesiSurvei::class, 'id_sesi_survei');
+    }
 }

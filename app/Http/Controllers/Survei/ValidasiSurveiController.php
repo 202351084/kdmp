@@ -13,11 +13,11 @@ class ValidasiSurveiController extends Controller
     private function getUserWilayahId(): ?int
     {
         $user = auth()->user();
-        if (!$user || !$user->id_koperasi || !$user->koperasi) {
+        if (!$user || !$user->id_entitas || !$user->entitas) {
             return null;
         }
 
-        return $user->koperasi->id_wilayah;
+        return $user->entitas->id_wilayah;
     }
 
     public function index(Request $request)
@@ -137,7 +137,7 @@ class ValidasiSurveiController extends Controller
         }
         $unmatchedMasyarakat = $unmatchedQuery->whereNotIn('id', $matchedMasyarakatIds->unique())->get();
 
-        $wilayahAdmin = ($idWilayah && $user->koperasi) ? $user->koperasi->wilayah : null;
+        $wilayahAdmin = ($idWilayah && $user->entitas) ? $user->entitas->wilayah : null;
 
         return view('survei.validasi.index', compact('rts', 'availablePeriods', 'bulan', 'tahun', 'wilayahAdmin', 'unmatchedMasyarakat'));
     }

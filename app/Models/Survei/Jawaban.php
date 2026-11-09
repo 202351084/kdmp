@@ -23,6 +23,11 @@ class Jawaban extends Model
         return $this->belongsTo(SesiSurvei::class, 'id_sesi');
     }
 
+    public function modul()
+    {
+        return $this->belongsTo(ModulSurvei::class, 'id_modul');
+    }
+
     public function pertanyaan()
     {
         return $this->belongsTo(Pertanyaan::class, 'id_pertanyaan');

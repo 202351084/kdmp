@@ -38,6 +38,7 @@
                         <th class="px-4 py-3 text-right font-medium">Qty Sistem</th>
                         <th class="px-4 py-3 text-right font-medium">Qty Fisik</th>
                         <th class="px-4 py-3 text-right font-medium">Selisih</th>
+                        <th class="px-4 py-3 text-right font-medium">Nilai Selisih</th>
                         <th class="px-4 py-3 font-medium">Keterangan</th>
                     </tr>
                 </thead>
@@ -58,11 +59,14 @@
                                 {{ rtrim(rtrim(number_format((float) $detail->selisih, 4, ',', '.'), '0'), ',') }}
                                 {{ $detail->barang->satuanDasar->kode_satuan ?? '' }}
                             </td>
+                            <td class="px-4 py-3 text-right text-ink-800">
+                                Rp {{ number_format((float) $detail->nilai_selisih, 2, ',', '.') }}
+                            </td>
                             <td class="px-4 py-3 text-ink-700">{{ $detail->keterangan ?? '-' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-10 text-center text-sm text-ink-600/60">Belum ada detail opname.</td>
+                            <td colspan="7" class="px-4 py-10 text-center text-sm text-ink-600/60">Belum ada detail opname.</td>
                         </tr>
                     @endforelse
                 </tbody>

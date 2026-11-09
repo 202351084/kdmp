@@ -13,7 +13,7 @@
     @php
         $menuCards = [
             // MASTER (Blue)
-            ['group' => 'Master', 'title' => 'Entitas', 'route' => route('master.entitas.index'), 'color' => 'bg-blue-600', 'icon' => '🏢'],
+            ['group' => 'Master', 'title' => 'Entitas', 'route' => route('master.entitas.index'), 'color' => 'bg-blue-600', 'icon' => '🏢', 'super_admin_only' => true],
             ['group' => 'Master', 'title' => 'Komoditas', 'route' => route('master.komoditas.index'), 'color' => 'bg-blue-600', 'icon' => '🌾'],
             ['group' => 'Master', 'title' => 'Barang', 'route' => route('master.barang.index'), 'color' => 'bg-blue-600', 'icon' => '📦'],
             ['group' => 'Master', 'title' => 'Pihak / Mitra', 'route' => route('master.pihak.index'), 'color' => 'bg-blue-600', 'icon' => '🤝'],
@@ -67,6 +67,7 @@
 
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-4">
         @foreach($menuCards as $menu)
+            @continue(! empty($menu['super_admin_only']) && auth()->user()?->id_entitas !== null)
             <a href="{{ $menu['route'] }}" class="group relative flex flex-col items-center justify-center rounded-[14px] {{ $menu['color'] }} p-4 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg hover:brightness-110 min-h-[140px]">
                 <div class="mb-3 flex items-center justify-center text-3xl opacity-90 group-hover:scale-110 transition-transform">
                     {{ $menu['icon'] }}

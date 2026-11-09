@@ -62,11 +62,14 @@
 @once
 <script>
 (function() {
-    // Shared Singleton Speech Recognition Manager
+    // Shared Singleton Speech Recognition Manager with Auto-Chunking & Phone Dictation Support
     window.__kdmpSpeechManager = window.__kdmpSpeechManager || {
         recognition: null,
         activeComponent: null,
-        
+        isManualStop: false,
+        silenceTimer: null,
+        restartTimer: null,
+
         getRecognition() {
             if (!this.recognition && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -79,11 +82,7 @@
                 this.recognition.onstart = () => {
                     if (this.activeComponent) {
                         this.activeComponent.isListening = true;
-                        const el = this.activeComponent.$refs.inputField;
-                        if (el) {
-                            this.activeComponent.originalPlaceholder = el.placeholder || '';
-                            el.placeholder = 'Mendengarkan... (silakan bicara)';
-                        }
+                        this.activeComponent.onRecognitionStarted();
                     }
                 };
 
@@ -96,41 +95,57 @@
                     for (let i = event.resultIndex; i < event.results.length; ++i) {
                         if (event.results[i].isFinal) {
                             for (let j = 0; j < event.results[i].length; j++) {
-                                finalAlternatives.push(event.results[i][j].transcript.trim());
+                                const t = event.results[i][j].transcript ? event.results[i][j].transcript.trim() : '';
+                                if (t && !finalAlternatives.includes(t)) {
+                                    finalAlternatives.push(t);
+                                }
                             }
                         } else {
                             interimTranscript += event.results[i][0].transcript;
                         }
                     }
 
-                    const inputEl = this.activeComponent.$refs.inputField;
-                    if (inputEl && interimTranscript) {
-                        inputEl.placeholder = 'Mendengar: "' + interimTranscript + '"...';
+                    if (interimTranscript) {
+                        this.activeComponent.handleInterim(interimTranscript.trim());
                     }
 
                     if (finalAlternatives.length > 0) {
-                        this.activeComponent.handleResult(finalAlternatives);
-                        this.stop();
+                        const shouldStopNow = this.activeComponent.handleFinal(finalAlternatives);
+                        if (shouldStopNow) {
+                            this.stop();
+                        } else {
+                            // Reset silence timer: jika hening selama 3 detik, baru otomatis stop
+                            this.resetSilenceTimer(3000);
+                        }
                     }
                 };
 
                 this.recognition.onerror = (event) => {
-                    if (this.activeComponent) {
-                        this.activeComponent.isListening = false;
-                        this.activeComponent.resetPlaceholder();
-                    }
+                    console.warn('Speech recognition status:', event.error);
                     if (event.error === 'not-allowed') {
-                        alert('Akses mikrofon tidak diizinkan. Silakan beri izin mikrofon di pengaturan browser Anda (klik ikon gembok di sebelah URL).');
-                    } else if (event.error === 'network') {
-                        alert('Gagal terhubung ke server pengenalan suara Google. Pastikan perangkat Anda terhubung ke internet.');
+                        alert('Akses mikrofon tidak diizinkan. Silakan klik ikon gembok/slider di sebelah kiri alamat URL browser untuk mengizinkan mikrofon.');
+                        this.stop();
                     }
-                    this.activeComponent = null;
                 };
 
                 this.recognition.onend = () => {
+                    clearTimeout(this.restartTimer);
+                    // Jika pengguna tidak mematikan mic secara manual dan masih berbicara (misal nomor HP belum selesai):
+                    if (!this.isManualStop && this.activeComponent && this.activeComponent.shouldKeepListening()) {
+                        this.restartTimer = setTimeout(() => {
+                            if (!this.isManualStop && this.activeComponent && this.activeComponent.shouldKeepListening()) {
+                                try {
+                                    this.recognition.start();
+                                } catch (e) {
+                                    this.stop();
+                                }
+                            }
+                        }, 150);
+                        return;
+                    }
+
                     if (this.activeComponent) {
-                        this.activeComponent.isListening = false;
-                        this.activeComponent.resetPlaceholder();
+                        this.activeComponent.onRecognitionEnded();
                         this.activeComponent = null;
                     }
                 };
@@ -138,10 +153,19 @@
             return this.recognition;
         },
 
+        resetSilenceTimer(delay) {
+            clearTimeout(this.silenceTimer);
+            this.silenceTimer = setTimeout(() => {
+                if (this.activeComponent) {
+                    this.stop();
+                }
+            }, delay || 3000);
+        },
+
         start(component) {
             const rec = this.getRecognition();
             if (!rec) {
-                alert('Browser Anda belum mendukung fitur input suara langsung. Harap gunakan Google Chrome atau Microsoft Edge.');
+                alert('Browser Anda belum mendukung input suara. Gunakan Google Chrome atau Microsoft Edge.');
                 return false;
             }
 
@@ -149,7 +173,12 @@
                 this.stop();
             }
 
+            this.isManualStop = false;
+            clearTimeout(this.silenceTimer);
+            clearTimeout(this.restartTimer);
             this.activeComponent = component;
+            this.activeComponent.onSessionStarted();
+
             try {
                 rec.start();
                 return true;
@@ -161,21 +190,23 @@
                     return true;
                 } catch (err) {
                     console.error('Failed to start speech recognition:', err);
-                    this.activeComponent = null;
+                    this.stop();
                     return false;
                 }
             }
         },
 
         stop() {
+            this.isManualStop = true;
+            clearTimeout(this.silenceTimer);
+            clearTimeout(this.restartTimer);
             if (this.recognition) {
                 try {
                     this.recognition.stop();
                 } catch (e) {}
             }
             if (this.activeComponent) {
-                this.activeComponent.isListening = false;
-                this.activeComponent.resetPlaceholder();
+                this.activeComponent.onRecognitionEnded();
                 this.activeComponent = null;
             }
         }
@@ -189,10 +220,9 @@
             autoFormat: autoFormat || '',
             isListening: false,
             originalPlaceholder: '',
+            accumulated: '',
 
-            init() {
-                // Siap digunakan
-            },
+            init() {},
 
             toggleSpeech() {
                 const mgr = window.__kdmpSpeechManager;
@@ -203,21 +233,157 @@
                 }
             },
 
-            resetPlaceholder() {
+            onSessionStarted() {
+                this.isListening = true;
+                this.accumulated = '';
+                const el = this.$refs.inputField;
+                if (el) {
+                    this.originalPlaceholder = el.placeholder || '';
+                    const isPhone = el.type === 'tel' || el.name === 'no_hp';
+                    el.placeholder = isPhone 
+                        ? '🎙️ Sebut nomor HP (bisa berjeda)...' 
+                        : '🎙️ Mendengarkan suara Anda...';
+                }
+            },
+
+            onRecognitionStarted() {
+                this.isListening = true;
+            },
+
+            onRecognitionEnded() {
+                this.isListening = false;
                 const el = this.$refs.inputField;
                 if (el && this.originalPlaceholder) {
                     el.placeholder = this.originalPlaceholder;
                 }
             },
 
-            handleResult(finalAlternatives) {
+            shouldKeepListening() {
+                if (!this.isListening) return false;
+                const el = this.$refs.inputField;
+                if (!el) return false;
+
+                const isPhone = el.type === 'tel' || el.name === 'no_hp';
+                if (isPhone) {
+                    const digits = (el.value || '').replace(/[^0-9]/g, '');
+                    // Terus dengarkan sampai nomor HP mencapai minimal 10 digit atau di-stop manual
+                    return digits.length < 10;
+                }
+
+                return false;
+            },
+
+            handleInterim(interim) {
+                const el = this.$refs.inputField;
+                if (!el) return;
+
+                const isPhone = el.type === 'tel' || el.name === 'no_hp';
+                if (isPhone) {
+                    const newDigits = this.parseSpokenDigits(interim);
+                    if (newDigits) {
+                        let preview = this.accumulated;
+                        if (!preview.endsWith(newDigits) && !newDigits.startsWith(preview)) {
+                            preview += newDigits;
+                        } else if (newDigits.length > preview.length) {
+                            preview = newDigits;
+                        }
+                        el.placeholder = '🎙️ "' + preview + '"... (bicara lagi)';
+                    }
+                } else {
+                    el.placeholder = '🎙️ "' + interim + '"...';
+                }
+            },
+
+            handleFinal(finalAlternatives) {
                 const inputElement = this.$refs.inputField;
-                if (!inputElement || finalAlternatives.length === 0) return;
+                if (!inputElement || !finalAlternatives || finalAlternatives.length === 0) return true;
 
+                const autoFormatUpper = (this.autoFormat || '').toUpperCase();
+                const isRtRwField = autoFormatUpper === 'RT' || autoFormatUpper === 'RW' || inputElement.name === 'nama_rt' || inputElement.name === 'rw';
+
+                // ==============================================================
+                // 1. KHUSUS NOMOR RT & NOMOR RW: Format Wajib Angka 2 Digit (01, 02, ...)
+                // ==============================================================
+                if (isRtRwField) {
+                    let extracted = null;
+                    for (const cand of finalAlternatives) {
+                        extracted = this.extractRtRwNumber(cand);
+                        if (extracted !== null) break;
+                    }
+
+                    if (extracted !== null) {
+                        inputElement.value = extracted;
+                    } else {
+                        let raw = finalAlternatives[0].trim().replace(/^(rt|rw)\s+(rt|rw)\s+/i, '$1 ');
+                        inputElement.value = raw;
+                    }
+
+                    this.notifyModelAndEvents(inputElement);
+                    return true; // Langsung selesai untuk RT/RW
+                }
+
+                // ==============================================================
+                // 2. INPUT TELEPON / HP (misal: no_hp) -> AKUMULASI SAMPAI LENGKAP!
+                // ==============================================================
+                if (inputElement.type === 'tel' || inputElement.name === 'no_hp') {
+                    let digits = '';
+                    for (const cand of finalAlternatives) {
+                        digits = this.parseSpokenDigits(cand);
+                        if (digits) break;
+                    }
+
+                    if (digits) {
+                        // Jika mesin suara mengirimkan transkrip utuh (sudah mencakup angka sebelumnya)
+                        if (digits.startsWith(this.accumulated) && digits.length >= this.accumulated.length) {
+                            this.accumulated = digits;
+                        } else if (!this.accumulated.endsWith(digits)) {
+                            // Mesin suara mengirim potongan pecahan (chunk) baru, sambungkan!
+                            this.accumulated += digits;
+                        }
+
+                        inputElement.value = this.accumulated;
+                        this.notifyModelAndEvents(inputElement);
+                        inputElement.placeholder = '🎙️ ' + this.accumulated + '... (sebutkan sisa nomor)';
+                    }
+
+                    // Jika nomor sudah mencapai panjang standar HP (>= 10 digit, misal 08123456789)
+                    if (this.accumulated.length >= 10) {
+                        return false; // Beri jeda 3 detik silence sebelum auto-stop, atau user bisa klik mic
+                    } else {
+                        return false; // Belum lengkap (< 10 digit), JANGAN STOP!
+                    }
+                }
+
+                // ==============================================================
+                // 3. INPUT NUMBER (misal: Total KK, Total Jiwa)
+                // ==============================================================
+                if (inputElement.type === 'number') {
+                    let numResult = null;
+                    for (const cand of finalAlternatives) {
+                        const parsed = this.parseIndonesianSpokenNumber(cand);
+                        if (parsed !== null) {
+                            numResult = parsed;
+                            break;
+                        }
+                    }
+
+                    if (numResult !== null) {
+                        inputElement.value = String(numResult);
+                    } else {
+                        const clean = this.parseCleanNumber(this.wordsToNumbers(finalAlternatives[0]));
+                        if (clean !== '') {
+                            inputElement.value = clean;
+                        }
+                    }
+
+                    this.notifyModelAndEvents(inputElement);
+                    return true;
+                }
+
+                // ==============================================================
+                // 4. DATALIST MATCHING (misal Komoditas / Wilayah)
+                // ==============================================================
                 let chosenText = finalAlternatives[0];
-                const autoFormatStr = this.autoFormat;
-
-                // 1. Cek Datalist jika ada (misal komoditas)
                 const listId = inputElement.getAttribute('list');
                 let options = [];
                 if (listId) {
@@ -235,7 +401,6 @@
                             const score = this.calculateSimilarity(candidate, opt);
                             if (score > highestScore) {
                                 highestScore = score;
-                                bestMatch = opt;
                             }
                         }
                     }
@@ -244,82 +409,177 @@
                     }
                 }
 
-                // 2. Format Angka jika input number atau tel
-                if (inputElement.type === 'tel') {
-                    let digits = chosenText.replace(/[^0-9]/g, '');
-                    if (digits) {
-                        inputElement.value = digits;
-                        if (inputElement._x_model) {
-                            try { inputElement._x_model.set(digits); } catch(e) {}
-                        }
-                    } else {
-                        this.resetPlaceholder();
-                        return;
-                    }
-                } else if (inputElement.type === 'number') {
-                    chosenText = this.wordsToNumbers(chosenText);
-                    // Bersihkan agar hanya angka dan desimal murni yang tersisa
-                    const cleanNumber = this.parseCleanNumber(chosenText);
-                    if (cleanNumber !== '') {
-                        inputElement.value = cleanNumber;
-                        if (inputElement._x_model) {
-                            try { inputElement._x_model.set(cleanNumber); } catch(e) {}
-                        }
-                    } else {
-                        this.resetPlaceholder();
-                        return;
-                    }
-                } else {
-                    // 3. Format Teks Normal
-                    chosenText = this.correctLabialWords(chosenText);
-                    chosenText = chosenText.replace(/\./g, "");
+                // ==============================================================
+                // 5. INPUT TEKS BIASA (misal: Nama Ketua RT, Dusun)
+                // ==============================================================
+                chosenText = this.correctLabialWords(chosenText);
+                chosenText = chosenText.replace(/\./g, "").trim();
+                chosenText = chosenText.replace(/\b[a-z]/g, c => c.toUpperCase());
 
-                    if (autoFormatStr) {
-                        let digits = chosenText.replace(/[^0-9]/g, '');
-                        if (digits) {
-                            if (digits.length === 1) digits = '0' + digits;
-                            chosenText = autoFormatStr.toUpperCase() + ' ' + digits;
-                        } else {
-                            chosenText = autoFormatStr.toUpperCase() + ' ' + chosenText;
-                        }
-                    } else {
-                        chosenText = chosenText.charAt(0).toUpperCase() + chosenText.slice(1);
-                    }
+                inputElement.value = chosenText;
+                this.notifyModelAndEvents(inputElement);
+                return true;
+            },
 
-                    inputElement.value = chosenText;
-                    if (inputElement._x_model) {
-                        try { inputElement._x_model.set(chosenText); } catch(e) {}
-                    }
+            notifyModelAndEvents(el) {
+                if (el._x_model) {
+                    try { el._x_model.set(el.value); } catch(e) {}
+                }
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            },
+
+            // Ekstraktor Pintar Khusus Nomor RT / RW: Mengonversi kata atau angka menjadi 2 digit (misal: "satu" -> "01")
+            extractRtRwNumber(text) {
+                if (!text) return null;
+                let s = String(text).toLowerCase().trim();
+
+                // Bersihkan kata awalan "rt", "rw", "nomor", "no", "ke"
+                s = s.replace(/\b(rt|rw|erte|er te|erwe|er we|nomor|no|angka|ke)\b/gi, ' ').trim();
+
+                // Jika sudah ada digit eksplisit (contoh: "01", "1", "12")
+                const digitMatch = s.match(/\b\d+\b/);
+                if (digitMatch) {
+                    const val = parseInt(digitMatch[0], 10);
+                    return String(val).padStart(2, '0');
                 }
 
-                // Trigger event agar x-model Alpine bereaksi
-                inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-                inputElement.dispatchEvent(new Event('change', { bubbles: true }));
-                this.resetPlaceholder();
+                // Kamus koreksi fonetik suara jarak jauh / bergumam
+                const phoneticMap = {
+                    'ratu': 'satu', 'batu': 'satu', 'sat': 'satu', 'setu': 'satu', 'katu': 'satu', 'atu': 'satu', 'sapu': 'satu',
+                    'jua': 'dua', 'tua': 'dua', 'rua': 'dua', 'duo': 'dua', 'gua': 'dua',
+                    'iga': 'tiga', 'tiba': 'tiga', 'rika': 'tiga',
+                    'ampat': 'empat', 'tempat': 'empat', 'pat': 'empat', 'mpat': 'empat',
+                    'gima': 'lima', 'ima': 'lima', 'rima': 'lima',
+                    'nam': 'enam', 'nem': 'enam', 'inam': 'enam',
+                    'tuju': 'tujuh', 'kujuh': 'tujuh', 'tujo': 'tujuh',
+                    'lapan': 'delapan', 'dapan': 'delapan',
+                    'sambilan': 'sembilan', 'bilan': 'sembilan', 'milan': 'sembilan',
+                    'puluh': 'sepuluh', 'belas': 'sebelas', 'song': 'nol', 'kosong': 'nol'
+                };
+
+                let words = s.split(/\s+/).map(w => phoneticMap[w] || w);
+                let normalized = words.join(' ');
+
+                const num = this.parseIndonesianSpokenNumber(normalized);
+                if (num !== null) {
+                    return String(num).padStart(2, '0');
+                }
+
+                return null;
+            },
+
+            // Parser Angka Lisan Bahasa Indonesia Majemuk & Tunggal
+            parseIndonesianSpokenNumber(str) {
+                if (!str) return null;
+                let s = String(str).toLowerCase().trim();
+
+                // Bersihkan tanda baca
+                s = s.replace(/[.,\-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+                // Jika angka murni
+                if (/^\d+$/.test(s)) {
+                    return parseInt(s, 10);
+                }
+
+                // Konversi satuan dasar langsung
+                const unitWords = {
+                    'nol': 0, 'kosong': 0,
+                    'satu': 1, 'se': 1,
+                    'dua': 2,
+                    'tiga': 3,
+                    'empat': 4,
+                    'lima': 5,
+                    'enam': 6,
+                    'tujuh': 7,
+                    'delapan': 8,
+                    'sembilan': 9,
+                    'sepuluh': 10,
+                    'sebelas': 11
+                };
+
+                if (unitWords[s] !== undefined) {
+                    return unitWords[s];
+                }
+
+                // Cek awalan "nol satu" / "kosong satu" -> 1
+                const zeroPrefixMatch = s.match(/^(?:nol|kosong)\s+(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|\d+)$/i);
+                if (zeroPrefixMatch) {
+                    const nextWord = zeroPrefixMatch[1];
+                    if (!isNaN(nextWord)) return parseInt(nextWord, 10);
+                    if (unitWords[nextWord] !== undefined) return unitWords[nextWord];
+                }
+
+                // Tangani belasan: "dua belas" s/d "sembilan belas"
+                const belasMatch = s.match(/^(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan)\s+belas$/i);
+                if (belasMatch) {
+                    return (unitWords[belasMatch[1]] || 0) + 10;
+                }
+
+                // Tangani puluhan: "dua puluh", "dua puluh satu", dll
+                const puluhMatch = s.match(/^(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan)\s+puluh(?:\s+(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan))?$/i);
+                if (puluhMatch) {
+                    const puluhan = (unitWords[puluhMatch[1]] || 0) * 10;
+                    const satuan = puluhMatch[2] ? (unitWords[puluhMatch[2]] || 0) : 0;
+                    return puluhan + satuan;
+                }
+
+                // Ratusan & Ribuan umum
+                const converted = this.wordsToNumbers(s);
+                const parsedVal = parseFloat(converted);
+                if (!isNaN(parsedVal)) {
+                    return parsedVal;
+                }
+
+                return null;
+            },
+
+            // Parsing Deretan Digit Lisan untuk Nomor Telepon (contoh: "kosong delapan satu...")
+            parseSpokenDigits(str) {
+                if (!str) return '';
+                let s = String(str).toLowerCase().trim();
+
+                const wordMap = [
+                    ['sembilan puluh', '90'], ['delapan puluh', '80'], ['tujuh puluh', '70'],
+                    ['enam puluh', '60'], ['lima puluh', '50'], ['empat puluh', '40'],
+                    ['tiga puluh', '30'], ['dua puluh', '20'], ['sepuluh', '10'],
+                    ['sembilan belas', '19'], ['delapan belas', '18'], ['tujuh belas', '17'],
+                    ['enam belas', '16'], ['lima belas', '15'], ['empat belas', '14'],
+                    ['tiga belas', '13'], ['dua belas', '12'], ['sebelas', '11'],
+                    ['kosong', '0'], ['nol', '0'], ['song', '0'],
+                    ['satu', '1'], ['ratu', '1'], ['sat', '1'], ['setu', '1'],
+                    ['dua', '2'], ['jua', '2'], ['tua', '2'],
+                    ['tiga', '3'], ['iga', '3'],
+                    ['empat', '4'], ['ampat', '4'], ['pat', '4'],
+                    ['lima', '5'], ['gima', '5'],
+                    ['enam', '6'], ['nam', '6'],
+                    ['tujuh', '7'], ['tuju', '7'],
+                    ['delapan', '8'], ['lapan', '8'],
+                    ['sembilan', '9'], ['milan', '9']
+                ];
+
+                for (const [w, d] of wordMap) {
+                    s = s.replace(new RegExp(`\\b${w}\\b`, 'gi'), d);
+                }
+
+                return s.replace(/[^0-9]/g, '');
             },
 
             // Bersihkan hasil konversi angka menjadi string angka valid untuk HTML5 input number
             parseCleanNumber(str) {
                 if (!str) return '';
                 let s = String(str).toLowerCase().trim();
-                
-                // Hapus awalan "rp", "idr", "rupiah"
                 s = s.replace(/^(rp|idr)\.?\s*/i, '').replace(/\s*rupiah$/i, '').trim();
-
-                // Hapus tanda baca di ujung (titik, koma, spasi)
                 s = s.replace(/[.,\s]+$/, '').trim();
                 if (!s || s === '.') return '';
 
-                // Tangani pemisah ribuan bertitik Indonesia: misal "150.000", "1.500.000", "192.800"
                 if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
                     s = s.replace(/\./g, '');
                 } else if (/^\d+,\d+$/.test(s)) {
-                    // Koma sebagai desimal (contoh: 1,5 -> 1.5)
                     s = s.replace(',', '.');
                 } else if (/^\d+(\.\d+)?$/.test(s)) {
-                    // Format angka/desimal standar yang sudah valid
+                    // Valid
                 } else {
-                    // Bersihkan format campuran (misal: "150.000,50")
                     if (s.includes('.') && s.includes(',')) {
                         s = s.replace(/\./g, '').replace(',', '.');
                     } else if ((s.match(/\./g) || []).length > 1) {
@@ -330,13 +590,10 @@
                     s = s.replace(/[^0-9.]/g, '');
                 }
 
-                // Hapus sisa titik di ujung jika ada
                 s = s.replace(/\.+$/, '');
-
                 if (s === '' || isNaN(Number(s))) {
                     return '';
                 }
-
                 return s;
             },
 
@@ -365,7 +622,6 @@
             normalizeCommodity(text) {
                 if (!text) return '';
                 let t = text.toLowerCase().trim();
-
                 const bwMap = {
                     'weras': 'beras', 'wawang': 'bawang', 'wayam': 'bayam',
                     'wuncis': 'buncis', 'bortel': 'wortel', 'walai': 'balai',
@@ -374,7 +630,6 @@
                 for (const [k, v] of Object.entries(bwMap)) {
                     t = t.replace(new RegExp(`\\b${k}\\b`, 'gi'), v);
                 }
-
                 const synonyms = {
                     'telor': 'telur ayam',
                     'cabe rawit': 'cabai rawit',
@@ -394,7 +649,6 @@
                 for (const [k, v] of Object.entries(synonyms)) {
                     t = t.replace(new RegExp(`\\b${k}\\b`, 'gi'), v);
                 }
-
                 t = t.replace(/\b\d+(\.\d+)?\s*(kilo|kg|liter|ltr|gram|gr|ons|bungkus|butir|biji|ikat|papan|potong|tabung|kaleng)?\b/gi, '');
                 t = t.replace(/\b(kilo|kg|liter|ltr|gram|gr|ons|bungkus|butir|biji|ikat|papan|potong|tabung|kaleng)\b/gi, '');
                 return t.replace(/\s+/g, ' ').trim();
@@ -451,19 +705,13 @@
             wordsToNumbers(text) {
                 if (!text) return '';
                 let str = String(text).toLowerCase().trim();
-
-                // Bersihkan awalan Rp / Rupiah
                 str = str.replace(/^(rp|idr)\.?\s*/i, '').replace(/\s*rupiah$/i, '').trim();
-
-                // Bersihkan tanda baca di ujung seperti titik dan koma dari engine suara
                 str = str.replace(/[.,\s]+$/, '').trim();
 
-                // Tangani singkatan informal: 15rb, 15 rb, 15k, 15 k
                 str = str.replace(/(\d+)\s*(rb|ribu)/gi, '$1 ribu');
                 str = str.replace(/(\d+)\s*k\b/gi, '$1 ribu');
                 str = str.replace(/(\d+)\s*(jt|juta)/gi, '$1 juta');
 
-                // Jika sudah berupa angka bertitik ribuan (contoh: 15.000 atau 15000)
                 if (/^\d{1,3}(\.\d{3})+$/.test(str)) {
                     return str.replace(/\./g, '');
                 }
@@ -471,7 +719,6 @@
                     return str;
                 }
 
-                // Tangani kata "setengah"
                 str = str.replace(/([a-z\d]+)\s+setengah/gi, (match, p1) => {
                     const units = {'satu':1,'dua':2,'tiga':3,'empat':4,'lima':5,'enam':6,'tujuh':7,'delapan':8,'sembilan':9,'sepuluh':10};
                     const val = !isNaN(p1) ? parseFloat(p1) : (units[p1.toLowerCase()] || 0);
@@ -484,7 +731,6 @@
                     if (!isNaN(s) && s !== '') return parseFloat(s);
                     let total = 0;
 
-                    // Ratusan
                     if (s.startsWith('seratus')) {
                         total += 100;
                         s = s.substring(7).trim();
@@ -525,14 +771,12 @@
                 let grandTotal = 0;
                 let remaining = str;
 
-                // Juta
                 const jutaMatch = remaining.match(/^(.*?)\s*juta\s*(.*)$/i);
                 if (jutaMatch) {
                     grandTotal += parseUpTo999(jutaMatch[1]) * 1000000;
                     remaining = (jutaMatch[2] || '').trim();
                 }
 
-                // Ribu
                 const ribuMatch = remaining.match(/^(.*?)\s*ribu\s*(.*)$/i);
                 if (ribuMatch) {
                     const rPart = ribuMatch[1].trim();

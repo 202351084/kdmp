@@ -20,4 +20,9 @@ class DemografiDesa extends Model
     {
         return $this->belongsTo(Wilayah::class, 'id_wilayah');
     }
+
+    public function sesiSurvei()
+    {
+        return $this->belongsTo(\App\Models\Survei\SesiSurvei::class, 'id_sesi_survei');
+    }
 }
