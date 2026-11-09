@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Gudang\GudangDashboardController;
+use App\Http\Controllers\Gudang\PencocokanSurplusDefisitController;
 use App\Http\Controllers\Gudang\BatchController;
 use App\Http\Controllers\Gudang\KartuStokController;
 use App\Http\Controllers\Gudang\KerusakanBarangController;
@@ -22,9 +23,9 @@ use App\Http\Controllers\Keuangan\KasTransaksiController;
 use App\Http\Controllers\Keuangan\PelunasanController;
 use App\Http\Controllers\Keuangan\PiutangController;
 use App\Http\Controllers\Keuangan\SimpananController;
-use App\Http\Controllers\Konsinyasi\MarketplaceController;
 use App\Http\Controllers\Konsinyasi\PengirimanKonsinyasiController;
 use App\Http\Controllers\Konsinyasi\RekonsiliasiController;
+use App\Http\Controllers\Konsinyasi\ReturKonsinyasiController;
 use App\Http\Controllers\Konsinyasi\SetoranKonsinyasiController;
 use App\Http\Controllers\Konsinyasi\StokKonsinyasiController;
 use App\Http\Controllers\LandingController;
@@ -124,6 +125,8 @@ Route::middleware('auth')->group(function () {
     // ===== M4 â€” Gudang =====
     Route::prefix('gudang')->name('gudang.')->group(function () {
         Route::get('/', [GudangDashboardController::class, 'index'])->name('index');
+        Route::get('pencocokan-surplus-defisit', [PencocokanSurplusDefisitController::class, 'index'])
+            ->name('pencocokan-surplus-defisit.index');
         Route::get('batch', [BatchController::class, 'index'])->name('batch.index');
         Route::resource('penerimaan', PenerimaanBarangController::class);
         Route::resource('opname', OpnameController::class);
@@ -168,13 +171,13 @@ Route::middleware('auth')->group(function () {
 
     // ===== M7 â€” Konsinyasi Antar Desa =====
     Route::prefix('konsinyasi')->name('konsinyasi.')->group(function () {
-        Route::resource('marketplace', MarketplaceController::class);
         Route::get('pengiriman/{id}/posting', [PengirimanKonsinyasiController::class, 'postingPage'])
             ->name('pengiriman.posting-page');
         Route::post('pengiriman/{id}/posting', [PengirimanKonsinyasiController::class, 'posting'])
             ->name('pengiriman.posting');
         Route::resource('pengiriman', PengirimanKonsinyasiController::class);
         Route::resource('stok', StokKonsinyasiController::class)->only(['index', 'show']);
+        Route::resource('retur', ReturKonsinyasiController::class)->only(['index', 'create', 'store']);
         Route::resource('setoran', SetoranKonsinyasiController::class);
         Route::get('rekonsiliasi', [RekonsiliasiController::class, 'index'])->name('rekonsiliasi.index');
     });

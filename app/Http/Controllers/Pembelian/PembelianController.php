@@ -517,7 +517,7 @@ class PembelianController extends ModuleCrudController
                 Rule::requiredIf($request->input('jenis_pembayaran') === 'kredit'),
             ],
             'id_unit_usaha' => 'nullable|exists:master_unit_usaha,id_unit_usaha',
-            'id_gudang' => 'nullable|exists:gudang,id_gudang',
+            'id_gudang' => ['nullable', 'integer', new TenantOwnershipRule('gudang', 'id_gudang')],
             'items' => 'required|array|min:1',
             'items.*.id_barang' => 'required|exists:master_barang,id_barang',
             'items.*.id_satuan' => 'required|exists:satuan,id',

@@ -7,8 +7,7 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Proses inti konsinyasi antar desa.
- * Barang tetap menjadi aset pemilik sampai terjual di desa penerima.
+ * Memproses konsinyasi antar desa atau titipan pihak perorangan.
  */
 class KonsinyasiService
 {
@@ -19,7 +18,8 @@ class KonsinyasiService
 
     /**
      * Mem-posting pengiriman titipan: stok normal pemilik berkurang,
-     * stok konsinyasi penerima bertambah, dan hanya pemilik mendapat jurnal KTK.
+     * stok konsinyasi penerima bertambah. Pemilik entitas juga mendapat jurnal KTK;
+     * titipan perorangan tidak mengurangi stok maupun membuat jurnal pemilik.
      */
     public function kirim(int $idKiriman): bool
     {
@@ -41,8 +41,20 @@ class KonsinyasiService
                 throw new RuntimeException('Pengiriman ini sudah diposting.');
             }
 
-            if ($kiriman->id_entitas_pemilik === $kiriman->id_entitas_penerima) {
+            if ($kiriman->jenis_pemilik === 'entitas' && $kiriman->id_entitas_pemilik === $kiriman->id_entitas_penerima) {
                 throw new RuntimeException('Pemilik dan penerima harus merupakan koperasi yang berbeda.');
+            }
+
+            if (
+                $kiriman->jenis_pemilik === 'pihak'
+                && ! DB::table('master_pihak')
+                    ->where('id_pihak', $kiriman->id_pihak_pemilik)
+                    ->where('id_entitas', $kiriman->id_entitas_penerima)
+                    ->where('is_active', true)
+                    ->whereIn('jenis_pihak', ['warga', 'petani'])
+                    ->exists()
+            ) {
+                throw new RuntimeException('Penitip harus merupakan warga atau petani aktif pada desa penerima.');
             }
 
             $detail = DB::table('pengiriman_konsinyasi_detail as d')
@@ -62,7 +74,7 @@ class KonsinyasiService
             $kekurangan = [];
 
             foreach ($detail as $item) {
-                $mutasiStokAda = DB::table('kartu_stok')
+                $mutasiStokAda = $kiriman->jenis_pemilik === 'entitas' && DB::table('kartu_stok')
                     ->where('ref_tipe', 'KIRIM_KONSINYASI')
                     ->where('ref_id', $idKiriman)
                     ->where('id_barang', $item->id_barang)
@@ -73,9 +85,11 @@ class KonsinyasiService
                     continue;
                 }
 
-                $tersedia = $this->stok->tersedia((int) $kiriman->id_gudang_asal, (int) $item->id_barang);
-                if (bccomp($tersedia, (string) $item->qty_dasar, 4) < 0) {
-                    $kekurangan[] = "barang {$item->id_barang}: tersedia {$tersedia}, diminta {$item->qty_dasar}";
+                if ($kiriman->jenis_pemilik === 'entitas') {
+                    $tersedia = $this->stok->tersedia((int) $kiriman->id_gudang_asal, (int) $item->id_barang);
+                    if (bccomp($tersedia, (string) $item->qty_dasar, 4) < 0) {
+                        $kekurangan[] = "barang {$item->id_barang}: tersedia {$tersedia}, diminta {$item->qty_dasar}";
+                    }
                 }
             }
 
@@ -104,14 +118,17 @@ class KonsinyasiService
                     throw new RuntimeException('Harga titip tidak boleh negatif.');
                 }
 
-                $kartuStok = DB::table('kartu_stok')
+                $kartuStok = $kiriman->jenis_pemilik === 'entitas' ? DB::table('kartu_stok')
                     ->where('ref_tipe', 'KIRIM_KONSINYASI')
                     ->where('ref_id', $idKiriman)
                     ->where('id_barang', $item->id_barang)
                     ->where('jenis_mutasi', 'OUT')
-                    ->first();
+                    ->first() : null;
 
-                if ($kartuStok) {
+                if ($kiriman->jenis_pemilik === 'pihak') {
+                    $hpp = '0';
+                    $nilaiHpp = '0';
+                } elseif ($kartuStok) {
                     // Retry setelah kegagalan jurnal: mutasi stok sudah tersimpan.
                     $hpp = (string) $kartuStok->harga_satuan;
                     $nilaiHpp = (string) $kartuStok->nilai_mutasi;
@@ -150,6 +167,7 @@ class KonsinyasiService
                     $stokKonsinyasiId = DB::table('stok_konsinyasi')->insertGetId([
                         'id_kiriman' => $idKiriman,
                         'id_entitas_pemilik' => $kiriman->id_entitas_pemilik,
+                        'id_pihak_pemilik' => $kiriman->id_pihak_pemilik,
                         'id_entitas_penerima' => $kiriman->id_entitas_penerima,
                         'id_gudang_penerima' => $kiriman->id_gudang_tujuan,
                         'id_barang' => $item->id_barang,
@@ -202,6 +220,22 @@ class KonsinyasiService
         }
 
         $kiriman = $persiapan['kiriman'];
+        if ($kiriman->jenis_pemilik === 'pihak') {
+            DB::table('pengiriman_konsinyasi')
+                ->where('id_kiriman', $idKiriman)
+                ->update([
+                    'status' => 'diterima',
+                    'status_posting' => 'T',
+                    'total_nilai_titip' => $persiapan['total_titip'],
+                    'total_hpp_pemilik' => 0,
+                    'id_jurnal_kirim' => null,
+                    'tgl_terima' => now()->toDateString(),
+                    'updated_at' => now(),
+                ]);
+
+            return true;
+        }
+
         $jurnal = $this->jurnal->posting(
             kodeTransaksi: 'KTK',
             payload: [
@@ -231,4 +265,3 @@ class KonsinyasiService
         }, 3);
     }
 }
-

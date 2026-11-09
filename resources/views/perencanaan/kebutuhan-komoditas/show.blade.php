@@ -303,9 +303,9 @@
                         + Buat Permintaan Pengadaan
                     </a>
                 @elseif ($hasilNeraca && $hasilNeraca->status_surplus_defisit === 'surplus')
-                    <a href="{{ route('konsinyasi.marketplace.index') }}"
+                    <a href="{{ route('konsinyasi.pengiriman.create') }}"
                        class="rounded-sm bg-sawah-600 px-4 py-2 text-xs font-semibold text-paper-50 shadow-xs hover:bg-sawah-700">
-                        Peluang Distribusi / Konsinyasi (M7) &rarr;
+                        Buat Pengiriman Konsinyasi &rarr;
                     </a>
                 @endif
                 <a href="{{ route('perencanaan.neraca-komoditas.index', ['tahun' => $item->tahun, 'bulan' => $item->bulan, 'id_komoditas' => $item->id_komoditas]) }}"

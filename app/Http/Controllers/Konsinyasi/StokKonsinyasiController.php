@@ -21,13 +21,14 @@ class StokKonsinyasiController extends ModuleCrudController
     {
         $query = StokKonsinyasi::query()
             ->diKoperasi()
-            ->with(['barang.satuanDasar', 'kiriman.koperasiPemilik', 'kiriman.gudangTujuan']);
+            ->with(['barang.satuanDasar', 'kiriman.koperasiPemilik', 'kiriman.pihakPemilik', 'kiriman.gudangTujuan']);
 
         if ($search = trim((string) $request->query('q', ''))) {
             $query->where(function ($builder) use ($search) {
                 $builder->whereHas('barang', fn ($barang) => $barang->where('nama_barang', 'like', "%{$search}%"))
                     ->orWhereHas('kiriman', fn ($kiriman) => $kiriman->where('kode_kiriman', 'like', "%{$search}%"))
-                    ->orWhereHas('kiriman.koperasiPemilik', fn ($pemilik) => $pemilik->where('nama_entitas', 'like', "%{$search}%"));
+                    ->orWhereHas('kiriman.koperasiPemilik', fn ($pemilik) => $pemilik->where('nama_entitas', 'like', "%{$search}%"))
+                    ->orWhereHas('kiriman.pihakPemilik', fn ($pemilik) => $pemilik->where('nama', 'like', "%{$search}%"));
             });
         }
 
@@ -45,7 +46,7 @@ class StokKonsinyasiController extends ModuleCrudController
     {
         $item = StokKonsinyasi::query()
             ->diKoperasi()
-            ->with(['barang.satuanDasar', 'kiriman.koperasiPemilik', 'kiriman.gudangTujuan'])
+            ->with(['barang.satuanDasar', 'kiriman.koperasiPemilik', 'kiriman.pihakPemilik', 'kiriman.gudangTujuan'])
             ->findOrFail($id);
 
         $mutasi = KartuKonsinyasi::query()

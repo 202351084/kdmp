@@ -62,15 +62,18 @@
                             </td>
                         @endforeach
                         <td class="px-4 py-3 text-right">
-                            @if (Route::has($routeBase . '.edit'))
+                            <div class="inline-flex items-center gap-3">
+                            @if (Route::has($routeBase . '.show'))
+                                <a href="{{ route($routeBase . '.show', $item->getKey()) }}"
+                                   class="text-xs font-medium text-merah-600 hover:text-merah-700">Detail</a>
+                            @endif
+                            @if (Route::has($routeBase . '.edit') && (! isset($canEdit) || $canEdit($item)))
                                 <a href="{{ route($routeBase . '.edit', $item->getKey()) }}"
                                    class="text-xs font-medium text-ink-700 hover:text-merah-600">Ubah</a>
-                            @elseif (Route::has($routeBase . '.show'))
-                                <a href="{{ route($routeBase . '.show', $item->getKey()) }}"
-                                   class="text-xs font-medium text-ink-700 hover:text-merah-600">Lihat</a>
-                            @else
+                            @elseif (! Route::has($routeBase . '.show'))
                                 <span class="text-xs text-ink-600/40">—</span>
                             @endif
+                            </div>
                         </td>
                     </tr>
                 @empty
