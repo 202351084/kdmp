@@ -103,11 +103,40 @@
                         >
                             <option value="">— Pilih kas/bank —</option>
                             @foreach ($kasBanks as $kas)
-                                <option value="{{ $kas->id_kas_bank }}" @selected(old('id_kas_bank') == $kas->id_kas_bank)>
-                                    {{ $kas->nama }}
+                                <option value="{{ $kas->id_kas_bank }}" data-jenis="{{ $kas->jenis }}" @selected(old('id_kas_bank') == $kas->id_kas_bank)>
+                                    {{ $kas->nama }}{{ $kas->jenis === 'bank' && $kas->no_rekening ? ' · '.$kas->no_rekening : '' }}
                                 </option>
                             @endforeach
                         </select>
+                    </div>
+
+                    <div id="rincian-transfer" class="hidden space-y-3 rounded-sm border border-sky-200 bg-sky-50/60 p-4 sm:col-span-2">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase text-sky-950">Rincian Transfer Pelunasan</h3>
+                            <p class="mt-1 text-xs text-sky-800">Catat rekening pengirim dan referensi pembayaran. Rekening penerima mengikuti bank yang dipilih di atas.</p>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <label class="block text-sm">
+                                <span class="mb-1 block text-xs font-semibold text-ink-700">Nama pengirim *</span>
+                                <input name="transfer_pengirim_nama" value="{{ old('transfer_pengirim_nama') }}" maxlength="150" class="rincian-transfer-input w-full rounded-sm border border-paper-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-sky-500 focus:outline-none">
+                            </label>
+                            <label class="block text-sm">
+                                <span class="mb-1 block text-xs font-semibold text-ink-700">Bank pengirim *</span>
+                                <input name="transfer_pengirim_bank" value="{{ old('transfer_pengirim_bank') }}" maxlength="100" class="rincian-transfer-input w-full rounded-sm border border-paper-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-sky-500 focus:outline-none">
+                            </label>
+                            <label class="block text-sm">
+                                <span class="mb-1 block text-xs font-semibold text-ink-700">Nomor rekening pengirim *</span>
+                                <input name="transfer_pengirim_rekening" value="{{ old('transfer_pengirim_rekening') }}" maxlength="50" class="rincian-transfer-input w-full rounded-sm border border-paper-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-sky-500 focus:outline-none">
+                            </label>
+                            <label class="block text-sm">
+                                <span class="mb-1 block text-xs font-semibold text-ink-700">Nomor referensi transfer *</span>
+                                <input name="transfer_no_referensi" value="{{ old('transfer_no_referensi') }}" maxlength="100" class="rincian-transfer-input w-full rounded-sm border border-paper-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-sky-500 focus:outline-none">
+                            </label>
+                        </div>
+                        <label class="flex items-start gap-2 text-xs font-medium text-sky-950">
+                            <input id="transfer-dikonfirmasi" type="checkbox" name="transfer_dikonfirmasi" value="1" @checked(old('transfer_dikonfirmasi')) class="mt-0.5 rounded border-sky-300 text-sky-600 focus:ring-sky-500">
+                            <span>Saya telah memastikan dana masuk ke rekening penerima yang dipilih.</span>
+                        </label>
                     </div>
 
                     {{-- Catatan --}}
@@ -214,6 +243,22 @@
         const elTotal    = document.getElementById('summary-total');
         const elSubmit   = document.getElementById('btn-submit');
         const elCheckAll = document.getElementById('check-all');
+        const elKasBank = document.getElementById('id_kas_bank');
+        const elRincianTransfer = document.getElementById('rincian-transfer');
+        const elRincianTransferInputs = document.querySelectorAll('.rincian-transfer-input');
+        const elTransferDikonfirmasi = document.getElementById('transfer-dikonfirmasi');
+
+        function syncRincianTransfer() {
+            const selectedAccount = elKasBank.options[elKasBank.selectedIndex];
+            const isBankReceipt = elJenis.value === 'terima_piutang'
+                && selectedAccount?.dataset.jenis === 'bank';
+
+            elRincianTransfer.classList.toggle('hidden', !isBankReceipt);
+            elRincianTransferInputs.forEach(function (input) {
+                input.required = isBankReceipt;
+            });
+            elTransferDikonfirmasi.required = isBankReceipt;
+        }
 
         let rowData = []; // data JSON dari server
 
@@ -361,8 +406,13 @@
             });
         }
 
-        elJenis.addEventListener('change', loadTerbuka);
+        elJenis.addEventListener('change', function () {
+            syncRincianTransfer();
+            loadTerbuka();
+        });
         elPihak.addEventListener('change', loadTerbuka);
+        elKasBank.addEventListener('change', syncRincianTransfer);
+        syncRincianTransfer();
     })();
     </script>
 

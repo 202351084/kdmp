@@ -40,11 +40,16 @@ class StandarKebutuhanController extends Controller
             });
         }
 
-        $items = (clone $query)->orderBy('id_komoditas', 'asc')
-            ->orderBy('kelompok_umur', 'asc')
+        $items = (clone $query)->orderByRaw("CASE kelompok_umur
+                WHEN 'balita' THEN 1
+                WHEN 'anak' THEN 2
+                WHEN 'remaja' THEN 3
+                WHEN 'dewasa' THEN 4
+                WHEN 'lansia' THEN 5
+                ELSE 99 END")
+            ->orderBy('id_komoditas', 'asc')
             ->orderBy('berlaku_mulai', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+            ->get();
 
         $totalStandar = StandarKebutuhanKomoditas::count();
         $jumlahKomoditasTerstandar = StandarKebutuhanKomoditas::distinct('id_komoditas')->count('id_komoditas');
@@ -139,4 +144,3 @@ class StandarKebutuhanController extends Controller
         return back()->with('status', "Standar kebutuhan komoditas {$nama} berhasil dihapus.");
     }
 }
-

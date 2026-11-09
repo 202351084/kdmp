@@ -1,4 +1,72 @@
 <x-layouts.app title="Laporan Kalkulasi — Rekapitulasi Neraca Komoditas" eyebrow="Kalkulasi dan Perencanaan">
+    <style>
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+
+            @media print {
+                html,
+                body,
+                body > div,
+                body > div > div,
+                main {
+                    height: auto !important;
+                    min-height: 0 !important;
+                    overflow: visible !important;
+                }
+
+                body {
+                    background: white !important;
+                }
+
+                .print-report {
+                    width: 100% !important;
+                    overflow: visible !important;
+                }
+
+                .print-report table {
+                    table-layout: fixed;
+                    width: 100%;
+                    font-size: 7px;
+                }
+
+                .print-report th,
+                .print-report td {
+                    padding: 3px 4px !important;
+                    line-height: 1.25;
+                    overflow-wrap: anywhere;
+                }
+
+                .print-report th:nth-child(1),
+                .print-report td:nth-child(1) { width: 3%; }
+                .print-report th:nth-child(2),
+                .print-report td:nth-child(2) { width: 11%; }
+                .print-report th:nth-child(3),
+                .print-report td:nth-child(3) { width: 8%; }
+                .print-report th:nth-child(4),
+                .print-report td:nth-child(4) { width: 6%; }
+                .print-report th:nth-child(5),
+                .print-report td:nth-child(5) { width: 8%; }
+                .print-report th:nth-child(6),
+                .print-report td:nth-child(6),
+                .print-report th:nth-child(7),
+                .print-report td:nth-child(7),
+                .print-report th:nth-child(8),
+                .print-report td:nth-child(8),
+                .print-report th:nth-child(10),
+                .print-report td:nth-child(10) { width: 9%; }
+                .print-report th:nth-child(9),
+                .print-report td:nth-child(9) { width: 7%; }
+                .print-report th:nth-child(11),
+                .print-report td:nth-child(11) { width: 21%; }
+
+                .print-report tr {
+                    break-inside: avoid;
+                }
+            }
+    </style>
+
     {{-- Navigasi kalkulasi (disembunyikan saat print) --}}
     <div class="print:hidden">
         <x-perencanaan.nav-m2 active="laporan" />
@@ -22,9 +90,8 @@
             </select>
 
             <select name="periode" class="rounded-sm border border-paper-300 bg-paper-100 px-3 py-2 text-xs font-medium text-ink-800 focus:border-merah-400 focus:outline-none">
-                <option value="">Semua Periode</option>
-                <option value="ganjil" {{ request('periode') === 'ganjil' ? 'selected' : '' }}>Periode Ganjil (Januari–Juni)</option>
-                <option value="genap" {{ request('periode') === 'genap' ? 'selected' : '' }}>Periode Genap (Juli–Desember)</option>
+                <option value="ganjil" {{ ($periode ?? 'ganjil') === 'ganjil' ? 'selected' : '' }}>Periode Ganjil (Januari–Juni)</option>
+                <option value="genap" {{ ($periode ?? 'ganjil') === 'genap' ? 'selected' : '' }}>Periode Genap (Juli–Desember)</option>
             </select>
 
             <select name="kategori" class="rounded-sm border border-paper-300 bg-paper-100 px-3 py-2 text-xs font-medium text-ink-800 focus:border-merah-400 focus:outline-none">
@@ -64,7 +131,7 @@
     </div>
 
     {{-- Dokumen Laporan (Print-Ready) --}}
-    <div class="rounded-sm border border-paper-300 bg-paper-50 p-8 shadow-2xs print:border-0 print:p-0 print:shadow-none">
+    <div class="print-report rounded-sm border border-paper-300 bg-paper-50 p-8 shadow-2xs print:border-0 print:p-0 print:shadow-none">
         {{-- Kop Laporan --}}
         <div class="border-b-2 border-ink-900 pb-5">
             <div class="flex items-center justify-between">
@@ -73,7 +140,7 @@
                     <h1 class="font-display text-2xl font-bold text-ink-950">Laporan Rekapitulasi Neraca Komoditas Pangan</h1>
                     <p class="mt-1 text-sm text-ink-700">
                         Wilayah: <strong>{{ $wilayah?->nama ?? 'Wilayah Desa' }}</strong>
-                        • Periode: <strong>{{ request('periode') ? ucfirst(request('periode')) : 'Semua Periode' }} {{ $tahun }}</strong>
+                        • Periode: <strong>{{ $periode === 'ganjil' ? 'Ganjil (Januari–Juni)' : 'Genap (Juli–Desember)' }} {{ $tahun }}</strong>
                     </p>
                 </div>
                 <div class="text-right">

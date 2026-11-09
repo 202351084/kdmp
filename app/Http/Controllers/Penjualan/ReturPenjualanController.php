@@ -20,6 +20,12 @@ class ReturPenjualanController extends ModuleCrudController
 
     public function index(Request $request): View
     {
+        $filters = $request->validate([
+            'archive' => ['sometimes', 'in:1'],
+            'year' => ['nullable', 'integer', 'min:1900', 'max:9999'],
+            'month' => ['nullable', 'integer', 'between:1,12'],
+            'day' => ['nullable', 'integer', 'between:1,31'],
+        ]);
         $query = ReturPenjualan::with(['penjualan.pihak', 'detail.barang.satuanDasar']);
 
         if ($search = $request->query('q')) {
@@ -29,10 +35,35 @@ class ReturPenjualanController extends ModuleCrudController
             });
         }
 
+        foreach (['year' => 'tgl_retur', 'month' => 'tgl_retur', 'day' => 'tgl_retur'] as $filter => $column) {
+            if (isset($filters[$filter])) {
+                match ($filter) {
+                    'year' => $query->whereYear($column, $filters[$filter]),
+                    'month' => $query->whereMonth($column, $filters[$filter]),
+                    'day' => $query->whereDay($column, $filters[$filter]),
+                };
+            }
+        }
+
+        $archiveActive = isset($filters['archive'])
+            || isset($filters['year'])
+            || isset($filters['month'])
+            || isset($filters['day']);
+        $yearlySummary = isset($filters['year']) && !isset($filters['month']) && !isset($filters['day'])
+            ? (clone $query)->selectRaw('COUNT(*) as total_transaksi, COALESCE(SUM(total_nilai), 0) as total_nilai')->first()
+            : null;
+        $items = $query
+            ->orderByDesc('tgl_retur')
+            ->orderByDesc('id_retur')
+            ->when($archiveActive, fn ($builder) => $builder->paginate(15)->withQueryString(), fn ($builder) => $builder->limit(5)->get());
+
         return view('penjualan.retur.index', [
             'title' => $this->title,
             'routeBase' => $this->routeBase,
-            'items' => $query->latest('id_retur')->paginate(15)->withQueryString(),
+            'items' => $items,
+            'archiveActive' => $archiveActive,
+            'archiveFilters' => $filters,
+            'yearlySummary' => $yearlySummary,
         ]);
     }
 

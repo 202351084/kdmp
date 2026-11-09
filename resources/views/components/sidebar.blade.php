@@ -1,4 +1,11 @@
 @php
+    $isPurchasingUser = auth()->user()?->hasPeran('pembelian') ?? false;
+    $isSalesUser = (auth()->user()?->hasPeran('kasir') ?? false)
+        || (auth()->user()?->hasPeran('penjualan') ?? false);
+    $isModuleLimitedUser = $isPurchasingUser || $isSalesUser;
+    $restrictedGroupTitle = $isPurchasingUser && $isSalesUser
+        ? 'Pembelian & Penjualan'
+        : ($isPurchasingUser ? 'Pembelian' : 'Penjualan');
     $sidebarGroups = [
         [
             'title' => 'Master Data',
@@ -131,7 +138,7 @@
     {{-- Navigation --}}
     <nav class="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar">
 
-        @if(auth()->check() && auth()->user()->id_entitas === null)
+        @if(auth()->check() && auth()->user()->id_entitas === null && !$isModuleLimitedUser)
             <div class="mb-6">
                 <p class="px-2 pb-2 font-mono text-[10px] uppercase tracking-widest text-paper-400">
                     Super Admin
@@ -155,6 +162,9 @@
 
         <ul class="space-y-2">
             @foreach ($sidebarGroups as $group)
+                @if ($isModuleLimitedUser && $group['title'] !== 'Pembelian & Penjualan')
+                    @continue
+                @endif
                 @php
                     $isGroupActive = collect(explode(',', $group['match']))->contains(fn ($p) => request()->routeIs($p));
                 @endphp
@@ -170,7 +180,7 @@
                             <span class="{{ $isGroupActive ? 'text-padi-400' : 'text-paper-500 group-hover:text-paper-300' }}">
                                 {!! $group['icon'] !!}
                             </span>
-                            <span class="font-medium">{{ $group['title'] }}</span>
+                            <span class="font-medium">{{ $isModuleLimitedUser ? $restrictedGroupTitle : $group['title'] }}</span>
                         </div>
                         <svg 
                             class="w-4 h-4 text-paper-500 transition-transform duration-200" 

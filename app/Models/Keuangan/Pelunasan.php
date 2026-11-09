@@ -19,11 +19,18 @@ class Pelunasan extends Model
         'id_entitas', 'kode_pelunasan', 'jenis', 'id_pihak', 'tanggal',
         'id_kas_bank', 'total_nilai', 'status_posting', 'id_jurnal',
         'catatan', 'created_by',
+        'transfer_pengirim_nama', 'transfer_pengirim_bank', 'transfer_pengirim_rekening',
+        'transfer_no_referensi', 'transfer_penerima_nama', 'transfer_penerima_rekening',
+        'transfer_dikonfirmasi_pada', 'transfer_dikonfirmasi_oleh',
     ];
 
     protected function casts(): array
     {
-        return ['tanggal' => 'date', 'total_nilai' => 'decimal:2'];
+        return [
+            'tanggal' => 'date',
+            'total_nilai' => 'decimal:2',
+            'transfer_dikonfirmasi_pada' => 'datetime',
+        ];
     }
 
     public function pihak()
@@ -41,4 +48,3 @@ class Pelunasan extends Model
         return $this->hasMany(PelunasanDetail::class, 'id_pelunasan', 'id_pelunasan');
     }
 }
-

@@ -104,6 +104,8 @@ Route::middleware('auth')->group(function () {
         Route::get('dashboard', [DashboardM2Controller::class, 'index'])->name('dashboard');
         Route::resource('demografi', DemografiController::class);
         Route::resource('potensi-produksi', PotensiProduksiController::class);
+        Route::post('potensi-produksi/komoditas', [PotensiProduksiController::class, 'storeKomoditas'])
+            ->name('potensi-produksi.komoditas.store');
         Route::resource('standar-kebutuhan', StandarKebutuhanController::class);
         Route::post('kebutuhan-komoditas/kalkulasi', [KebutuhanKomoditasController::class, 'kalkulasi'])
             ->name('kebutuhan-komoditas.kalkulasi');
@@ -111,6 +113,8 @@ Route::middleware('auth')->group(function () {
             ->only(['index', 'show']);
         Route::resource('neraca-komoditas', NeracaKomoditasController::class)
             ->only(['index', 'show']);
+        Route::post('neraca-komoditas/{hasil}/ajukan-ke-gudang', [NeracaKomoditasController::class, 'ajukanKeGudang'])
+            ->name('neraca-komoditas.ajukan-ke-gudang');
         Route::get('laporan', [LaporanM2Controller::class, 'index'])->name('laporan.index');
         Route::resource('perbandingan-harga', PerbandinganHargaController::class);
         Route::get('permintaan-pengadaan/from-hasil/{hasil}', [PermintaanPengadaanController::class, 'fromHasil'])
@@ -134,6 +138,8 @@ Route::middleware('auth')->group(function () {
     // ===== M5 Ã¢â‚¬â€ Pembelian =====
     Route::prefix('pembelian')->name('pembelian.')->group(function () {
     Route::resource('pembelian', PembelianController::class);
+    Route::get('pembelian/{pembelian}/invoice', [PembelianController::class, 'invoice'])
+        ->name('pembelian.invoice');
 
     Route::patch('pembelian/{pembelian}/approve', [PembelianController::class, 'approve'])
         ->name('approve');
@@ -151,6 +157,8 @@ Route::middleware('auth')->group(function () {
         ->name('show-retur');
 
     Route::resource('retur', ReturPembelianController::class);
+    Route::get('retur/{retur}/invoice', [ReturPembelianController::class, 'invoice'])
+        ->name('retur.invoice');
     Route::patch('retur/{retur}/approve', [ReturPembelianController::class, 'approve'])
         ->name('retur.approve');
     });

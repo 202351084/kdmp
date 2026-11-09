@@ -107,7 +107,7 @@
         <div class="flex items-center justify-between border-b border-paper-200 px-5 py-4">
             <div>
                 <h2 class="font-display text-base font-semibold text-ink-900">Rincian Populasi &amp; Estimasi Kebutuhan</h2>
-                <p class="text-xs text-ink-600">Perhitungan per kelompok umur berdasarkan data survei demografi M1</p>
+                <p class="text-xs text-ink-600">Perhitungan per kelompok umur berdasarkan data survei demografi</p>
             </div>
             <a href="{{ route('perencanaan.kebutuhan-komoditas.index', ['tahun' => $hasil->tahun, 'bulan' => $hasil->bulan, 'id_komoditas' => $hasil->id_komoditas]) }}"
                class="text-xs font-medium text-merah-600 hover:underline">
@@ -188,13 +188,15 @@
                     <div>
                         <h4 class="font-semibold text-sawah-700 text-sm">Status Surplus Terdeteksi: Potensi Pasokan Mitra Desa</h4>
                         <p class="mt-0.5 text-xs text-ink-700">
-                            Komoditas ini memiliki kelebihan pasokan sebesar <strong>+{{ number_format((float) $hasil->selisih, 2, ',', '.') }} {{ $satuan }}</strong>. Jika akan dititipkan ke desa lain, catat melalui pengiriman konsinyasi.
+                            Komoditas ini memiliki kelebihan pasokan sebesar <strong>+{{ number_format((float) $hasil->selisih, 2, ',', '.') }} {{ $satuan }}</strong>. Ajukan ke gudang untuk dibuatkan draft penerimaan. Stok baru bertambah setelah petugas memverifikasi dan memposting penerimaan.
                         </p>
                     </div>
-                    <a href="{{ route('konsinyasi.pengiriman.create') }}"
-                       class="rounded-sm border border-sawah-600 bg-sawah-600 px-4 py-2 text-xs font-semibold text-paper-50 hover:bg-sawah-700">
-                        Buat Pengiriman Konsinyasi &rarr;
-                    </a>
+                    <form method="POST" action="{{ route('perencanaan.neraca-komoditas.ajukan-ke-gudang', ['hasil' => $hasil->id_hasil]) }}">
+                        @csrf
+                        <button type="submit" class="rounded-sm border border-sawah-600 bg-sawah-600 px-4 py-2 text-xs font-semibold text-paper-50 hover:bg-sawah-700">
+                            Ajukan ke Gudang
+                        </button>
+                    </form>
                 </div>
             @else
                 <div>

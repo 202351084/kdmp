@@ -19,8 +19,7 @@ use Illuminate\Support\Facades\DB;
  * sepasang sisi barang. Tanpa pasangan HPP/Persediaan, Laba Rugi akan
  * menunjukkan margin 100% dan nilai Persediaan tidak pernah berkurang.
  *
- * Kode JKW (Jual Kredit Warga) SENGAJA TIDAK ADA: penjualan ke warga
- * selalu tunai atau transfer.
+ * JKW mencatat penjualan kredit warga ke piutang dagang.
  *
  * KSM, KSK, dan MTK (Fase 4) SENGAJA tidak punya baris di
  * master_detail_transaksi — akun lawannya benar-benar bebas dipilih
@@ -35,12 +34,15 @@ class TransaksiTemplateSeeder extends Seeder
             // kode, nama, modul
             ['JTW',  'Jual Tunai Warga',                'penjualan'],
             ['JTFW', 'Jual Transfer Warga',             'penjualan'],
+            ['JKW',  'Jual Kredit Warga',               'penjualan'],
             ['BTU',  'Beli Tunai',                      'pembelian'],
             ['BTF',  'Beli Transfer',                   'pembelian'],
             ['BKR',  'Beli Kredit',                     'pembelian'],
+            ['KPN',  'Terima Konsinyasi dari Desa',     'pembelian'],
             ['BPT',  'Beli Tunai dari Petani',          'pembelian'],
             ['RBU',  'Retur Beli - Diganti Uang',       'pembelian'],
             ['RBH',  'Retur Beli - Potong Hutang',      'pembelian'],
+            ['RBK',  'Retur Konsinyasi - Potong Hutang', 'pembelian'],
             ['RJU',  'Retur Jual - Diganti Uang',       'penjualan'],
             // --- konsinyasi ---
             ['KTK',  'Kirim Titipan Konsinyasi',        'konsinyasi'],
@@ -94,6 +96,11 @@ class TransaksiTemplateSeeder extends Seeder
             ['JTFW', 3, null, 'HPP_UNIT',        'D', 'total_hpp'],
             ['JTFW', 4, null, 'PERSEDIAAN_UNIT', 'K', 'total_hpp'],
 
+            ['JKW', 1, '1132', null,              'D', 'total_bayar'],
+            ['JKW', 2, null,   'PENDAPATAN_UNIT', 'K', 'total_bayar'],
+            ['JKW', 3, null,   'HPP_UNIT',        'D', 'total_hpp'],
+            ['JKW', 4, null,   'PERSEDIAAN_UNIT', 'K', 'total_hpp'],
+
             // ===== PEMBELIAN =====
             ['BTU', 1, null,   'PERSEDIAAN_UNIT', 'D', 'total_pembelian'],
             ['BTU', 2, '1111', null,              'K', 'total_pembelian'],
@@ -101,6 +108,8 @@ class TransaksiTemplateSeeder extends Seeder
             ['BTF', 2, null,   'KAS_BANK',        'K', 'total_pembelian'],
             ['BKR', 1, null,   'PERSEDIAAN_UNIT', 'D', 'total_pembelian'],
             ['BKR', 2, '2111', null,              'K', 'total_pembelian'],
+            ['KPN', 1, null,   'PERSEDIAAN_UNIT', 'D', 'total_pembelian'],
+            ['KPN', 2, '2117', null,              'K', 'total_pembelian'],
             ['BPT', 1, null,   'PERSEDIAAN_UNIT', 'D', 'total_pembelian'],
             ['BPT', 2, '1111', null,              'K', 'total_pembelian'],
 
@@ -109,6 +118,8 @@ class TransaksiTemplateSeeder extends Seeder
             ['RBU', 2, null,   'PERSEDIAAN_UNIT', 'K', 'total_nilai'],
             ['RBH', 1, '2111', null,              'D', 'total_nilai'],
             ['RBH', 2, null,   'PERSEDIAAN_UNIT', 'K', 'total_nilai'],
+            ['RBK', 1, '2117', null,              'D', 'total_nilai'],
+            ['RBK', 2, null,   'PERSEDIAAN_UNIT', 'K', 'total_nilai'],
             // Pakai akun kontra 421, jangan mendebit akun Pendapatan langsung
             ['RJU', 1, '421',  null,              'D', 'total_nilai'],
             ['RJU', 2, '1111', null,              'K', 'total_nilai'],

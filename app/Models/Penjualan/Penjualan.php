@@ -10,7 +10,7 @@ use App\Models\Master\UnitUsaha;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Penjualan ke warga SELALU tunai/transfer (tidak ada JKW).
+ * Transaksi penjualan kasir dapat dibayar tunai, transfer, atau kredit.
  * is_pembeli_anggota DISALIN saat transaksi â€” dasar perhitungan jasa anggota
  * untuk pembagian SHU, tidak boleh di-join dari master_pihak saat pelaporan.
  */
@@ -22,22 +22,27 @@ class Penjualan extends Model
     protected $primaryKey = 'id_penjualan';
 
     protected $fillable = [
-        'id_entitas', 'kode_penjualan', 'id_pihak', 'id_unit_usaha', 'id_gudang',
-        'tanggal_transaksi', 'is_pembeli_anggota', 'ada_baris_konsinyasi',
+        'id_entitas', 'kode_penjualan', 'id_pihak', 'nama_pembeli', 'id_unit_usaha', 'id_gudang',
+        'tanggal_transaksi', 'tgl_jatuh_tempo', 'is_pembeli_anggota', 'ada_baris_konsinyasi',
         'id_kas_bank', 'metode_bayar', 'total_bruto', 'diskon', 'total_bayar',
         'total_hpp', 'status', 'status_posting', 'id_jurnal', 'created_by',
+        'transfer_pengirim_nama', 'transfer_pengirim_bank', 'transfer_pengirim_rekening',
+        'transfer_no_referensi', 'transfer_penerima_nama', 'transfer_penerima_rekening',
+        'transfer_dikonfirmasi_pada', 'transfer_dikonfirmasi_oleh',
     ];
 
     protected function casts(): array
     {
         return [
             'tanggal_transaksi' => 'date',
+            'tgl_jatuh_tempo' => 'date',
             'is_pembeli_anggota' => 'boolean',
             'ada_baris_konsinyasi' => 'boolean',
             'total_bruto' => 'decimal:2',
             'diskon' => 'decimal:2',
             'total_bayar' => 'decimal:2',
             'total_hpp' => 'decimal:2',
+            'transfer_dikonfirmasi_pada' => 'datetime',
         ];
     }
 
@@ -71,4 +76,3 @@ class Penjualan extends Model
         return $this->hasMany(ReturPenjualan::class, 'id_penjualan', 'id_penjualan');
     }
 }
-

@@ -149,11 +149,11 @@
         <div>
             @if ($adaDataDemografi)
                 <span class="inline-flex items-center gap-1 rounded bg-sawah-100 px-2 py-0.5 font-mono text-[11px] font-medium text-sawah-600">
-                    ✓ Data Demografi M1 Siap ({{ number_format($totalPenduduk, 0, ',', '.') }} Jiwa)
+                    ✓ Data Demografi Survei Siap ({{ number_format($totalPenduduk, 0, ',', '.') }} Jiwa)
                 </span>
             @else
                 <span class="inline-flex items-center gap-1 rounded bg-merah-100 px-2 py-0.5 font-mono text-[11px] font-medium text-merah-600">
-                    ⚠ Data Demografi Belum Tersedia di M1
+                    ⚠ Data Demografi Belum Tersedia di Survei
                 </span>
             @endif
         </div>
@@ -228,7 +228,7 @@
                 <div class="flex items-center justify-between border-b border-paper-200 pb-3">
                     <div>
                         <h3 class="font-display text-base font-semibold text-ink-900">Distribusi Status Neraca Komoditas</h3>
-                        <p class="text-xs text-ink-600">Proporsi surplus, seimbang, dan defisit pada periode terpilih</p>
+                        <p class="text-xs text-ink-600">Ringkasan per sektor dan komoditas; klik kartu untuk melihat periode</p>
                     </div>
                     <span class="font-mono text-xs text-ink-600/70">{{ $totalKomoditasTerhitung }} Komoditas</span>
                 </div>
@@ -262,44 +262,42 @@
                     </div>
                 </div>
 
-                {{-- Rincian Bar Volume Per Komoditas --}}
+                {{-- Rincian ringkas per sektor dan komoditas --}}
                 <div class="mt-6">
-                    <p class="mb-3 font-mono text-[11px] uppercase tracking-wide text-ink-600/70">Perbandingan Kebutuhan vs Ketersediaan Per Komoditas</p>
                     <div class="space-y-3">
-                        @forelse ($daftarHasil as $hasil)
-                            @php
-                                $maxVol = max((float)$hasil->total_kebutuhan, (float)$hasil->total_ketersediaan, 1);
-                                $wKebutuhan = round(((float)$hasil->total_kebutuhan / $maxVol) * 100);
-                                $wKetersediaan = round(((float)$hasil->total_ketersediaan / $maxVol) * 100);
-                            @endphp
-                            <div class="rounded-sm border border-paper-200 bg-paper-100/60 p-3">
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="font-semibold text-ink-950">{{ $hasil->komoditas?->nama }}</span>
-                                    <span class="font-mono text-[11px] uppercase
-                                          {{ $hasil->status_surplus_defisit === 'surplus' ? 'text-sawah-600 font-semibold' : ($hasil->status_surplus_defisit === 'defisit' ? 'text-merah-600 font-semibold' : 'text-ink-700') }}">
-                                        {{ $hasil->status_surplus_defisit }}
-                                        ({{ number_format($hasil->persentase_kecukupan, 1, ',', '.') }}%)
-                                    </span>
+                        @forelse ($distribusiNeraca as $sektor => $komoditasSektor)
+                            <details class="group rounded-sm border border-paper-200 bg-paper-100/60" @if ($loop->first) open @endif>
+                                <summary class="flex cursor-pointer list-none items-center justify-between px-3 py-2.5">
+                                    <span class="font-semibold capitalize text-ink-950">{{ $sektor }}</span>
+                                    <span class="text-xs text-ink-600">{{ $komoditasSektor->count() }} komoditas <span class="transition-transform group-open:inline-block group-open:rotate-180">⌄</span></span>
+                                </summary>
+                                <div class="grid gap-2 border-t border-paper-200 p-3 md:grid-cols-2">
+                                    @foreach ($komoditasSektor as $ringkasan)
+                                        @php
+                                            $statusClass = $ringkasan['status_terbaru'] === 'surplus' ? 'text-sawah-600' : ($ringkasan['status_terbaru'] === 'defisit' ? 'text-merah-600' : 'text-ink-700');
+                                        @endphp
+                                        <details class="group rounded-sm border border-paper-200 bg-paper-50">
+                                            <summary class="flex cursor-pointer list-none items-center justify-between gap-2 p-3">
+                                                <span class="font-semibold text-ink-950">{{ $ringkasan['komoditas']?->nama ?? 'Komoditas' }}</span>
+                                                <span class="text-xs font-semibold capitalize {{ $statusClass }}">{{ $ringkasan['status_terbaru'] }}</span>
+                                            </summary>
+                                            <div class="border-t border-paper-200 px-3 pb-3 text-xs text-ink-700">
+                                                <div class="mt-2 grid grid-cols-2 gap-2">
+                                                    <span>Kebutuhan: <strong>{{ number_format($ringkasan['total_kebutuhan'], 1, ',', '.') }}</strong></span>
+                                                    <span>Ketersediaan: <strong>{{ number_format($ringkasan['total_ketersediaan'], 1, ',', '.') }}</strong></span>
+                                                </div>
+                                                <p class="mt-2 font-semibold text-ink-900">Rincian periode</p>
+                                                @foreach ($ringkasan['items'] as $hasil)
+                                                    <div class="mt-1 flex items-center justify-between border-b border-paper-200/70 py-1 last:border-0">
+                                                        <span>{{ \Carbon\Carbon::createFromDate($hasil->tahun, $hasil->bulan, 1)->translatedFormat('F') }} {{ $hasil->tahun }}</span>
+                                                        <span class="capitalize {{ $hasil->status_surplus_defisit === 'surplus' ? 'text-sawah-600' : ($hasil->status_surplus_defisit === 'defisit' ? 'text-merah-600' : 'text-ink-700') }}">{{ $hasil->status_surplus_defisit }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </details>
+                                    @endforeach
                                 </div>
-
-                                {{-- Bar Kebutuhan (Merah/Abu) --}}
-                                <div class="mt-2 space-y-1">
-                                    <div class="flex items-center gap-2 text-[11px]">
-                                        <span class="w-20 shrink-0 text-ink-600">Kebutuhan:</span>
-                                        <div class="flex-1 overflow-hidden rounded-[2px] bg-paper-200 h-2">
-                                            <div style="width: {{ $wKebutuhan }}%" class="h-full bg-ink-700"></div>
-                                        </div>
-                                        <span class="w-24 text-right font-mono text-ink-800">{{ number_format($hasil->total_kebutuhan, 1, ',', '.') }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2 text-[11px]">
-                                        <span class="w-20 shrink-0 text-ink-600">Ketersediaan:</span>
-                                        <div class="flex-1 overflow-hidden rounded-[2px] bg-paper-200 h-2">
-                                            <div style="width: {{ $wKetersediaan }}%" class="h-full {{ $hasil->selisih >= 0 ? 'bg-sawah-500' : 'bg-merah-500' }}"></div>
-                                        </div>
-                                        <span class="w-24 text-right font-mono text-ink-800">{{ number_format($hasil->total_ketersediaan, 1, ',', '.') }}</span>
-                                    </div>
-                                </div>
-                            </div>
+                            </details>
                         @empty
                             <p class="py-4 text-center text-xs text-ink-600/70">Belum ada data kalkulasi untuk periode ini.</p>
                         @endforelse
@@ -308,7 +306,7 @@
             </div>
         </div>
 
-        {{-- Kolom Kanan (5 Kolom): Daftar Defisit Terbesar & Info Sumber Data M1 --}}
+        {{-- Kolom Kanan (5 Kolom): Daftar Defisit Terbesar & Info Sumber Data Survei --}}
         <div class="space-y-6 lg:col-span-5">
             {{-- Tabel Komoditas Defisit Terbesar (Top Deficits) --}}
             <div class="rounded-sm border border-merah-500/30 bg-paper-50 p-5 shadow-2xs">
@@ -359,17 +357,17 @@
                 </div>
             </div>
 
-            {{-- Kartu Info Sumber Data M1 --}}
+            {{-- Kartu Info Sumber Data Survei --}}
             <div class="rounded-sm border border-paper-300 bg-paper-50 p-5 shadow-2xs">
                 <div class="flex items-center justify-between border-b border-paper-200 pb-3">
-                    <h3 class="font-display text-base font-semibold text-ink-900">Sumber Data M1 Lapangan</h3>
+                    <h3 class="font-display text-base font-semibold text-ink-900">Sumber Data Survei Lapangan</h3>
                     <span class="rounded bg-paper-200 px-2 py-0.5 font-mono text-[10px] text-ink-700">Survei &rarr; Kalkulasi</span>
                 </div>
 
                 <div class="mt-4 space-y-3 text-xs text-ink-800">
                     <div class="flex items-start justify-between border-b border-paper-200/60 pb-2">
                         <div>
-                            <p class="font-medium text-ink-900">Demografi Kependudukan (M1 Sesi 1)</p>
+                            <p class="font-medium text-ink-900">Demografi Kependudukan (Survei Sesi 1)</p>
                             <p class="text-[11px] text-ink-600/80">Basis jumlah jiwa per kelompok umur</p>
                         </div>
                         <div class="text-right">
@@ -404,7 +402,7 @@
 
                     <div class="flex items-start justify-between border-b border-paper-200/60 pb-2 pt-1">
                         <div>
-                            <p class="font-medium text-ink-900">Potensi Panen & Ketersediaan (M1 Sesi 2)</p>
+                            <p class="font-medium text-ink-900">Potensi Panen & Ketersediaan (Survei Sesi 2)</p>
                             <p class="text-[11px] text-ink-600/80">Produksi pertanian komoditas lokal</p>
                         </div>
                         <div class="text-right">
@@ -415,7 +413,7 @@
 
                     <div class="flex items-start justify-between pt-1">
                         <div>
-                            <p class="font-medium text-ink-900">Sesi Survei M1 Terakhir</p>
+                            <p class="font-medium text-ink-900">Sesi Survei Terakhir</p>
                             <p class="text-[11px] text-ink-600/80">Petugas survei lapangan desa</p>
                         </div>
                         <div class="text-right">
@@ -431,7 +429,7 @@
 
                 <div class="mt-4 border-t border-paper-200 pt-3">
                     <a href="{{ route('survei.sesi.index') }}" class="inline-flex items-center gap-1 text-xs font-medium text-merah-600 hover:underline">
-                        <span>Buka Modul Survei M1</span>
+                        <span>Buka Modul Survei</span>
                         <span>&rarr;</span>
                     </a>
                 </div>

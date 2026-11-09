@@ -127,7 +127,7 @@
                 <p class="mt-0.5 font-mono text-lg font-bold text-ink-900">
                     {{ number_format($totalJiwa, 0, ',', '.') }} <span class="text-xs font-normal text-ink-700">Jiwa</span>
                 </p>
-                <p class="text-[10px] text-ink-600">Basis data kependudukan M1</p>
+                <p class="text-[10px] text-ink-600">Basis data kependudukan survei</p>
             </div>
         </div>
     </div>
@@ -261,9 +261,9 @@
         <h3 class="font-display text-sm font-semibold text-ink-950">Penjelasan Logika Perhitungan &amp; Snapshot Idempoten</h3>
         <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 text-xs text-ink-700">
             <div class="rounded-sm border border-paper-200 bg-paper-100/50 p-3">
-                <span class="font-semibold text-ink-900 block">1. Sumber Data Demografi (M1)</span>
+                <span class="font-semibold text-ink-900 block">1. Sumber Data Demografi Survei</span>
                 <p class="mt-1 text-ink-600">
-                    Jumlah penduduk diambil dari entri demografi desa yang terhubung dengan survei M1 untuk tahun <strong>{{ $item->tahun }}</strong>. Pemutakhiran survei M1 akan otomatis tersinkronisasi saat kalkulasi dijalankan ulang.
+                    Jumlah penduduk diambil dari entri demografi desa yang terhubung dengan survei untuk tahun <strong>{{ $item->tahun }}</strong>. Pemutakhiran survei akan otomatis tersinkronisasi saat kalkulasi dijalankan ulang.
                 </p>
             </div>
             <div class="rounded-sm border border-paper-200 bg-paper-100/50 p-3">

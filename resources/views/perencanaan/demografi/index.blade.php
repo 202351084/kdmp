@@ -22,7 +22,7 @@
         </div>
     @endif
 
-    {{-- Context Banner Wilayah & Sumber M1 --}}
+    {{-- Context Banner Wilayah & Sumber Survei --}}
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sm border border-paper-300 bg-paper-50 p-4 shadow-2xs">
         <form method="GET" action="{{ route('perencanaan.demografi.index') }}" class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-1.5 rounded-sm border border-paper-300 bg-paper-100 px-3 py-2 text-xs font-medium text-ink-800">
@@ -48,7 +48,7 @@
             <a href="{{ route('survei.sesi.index') }}"
                class="inline-flex items-center gap-1.5 rounded-sm border border-paper-300 bg-paper-100 px-3 py-2 text-xs font-medium text-ink-700 hover:border-merah-400">
                 <span>📋</span>
-                <span>Lihat Survei M1</span>
+                <span>Lihat Survei</span>
             </a>
 
             <button type="button"
@@ -115,10 +115,10 @@
             </p>
         </div>
 
-        {{-- Card 4: Status Integrasi M1 Survei --}}
+        {{-- Card 4: Status Integrasi Survei --}}
         <div class="rounded-sm border border-paper-300 bg-paper-50 p-4 shadow-2xs">
             <div class="flex items-center justify-between">
-                <p class="font-mono text-[11px] uppercase tracking-wider text-ink-600/70">Koneksi M1 Survei</p>
+                <p class="font-mono text-[11px] uppercase tracking-wider text-ink-600/70">Koneksi Survei</p>
                 <span class="flex h-5 w-5 items-center justify-center rounded-full {{ $sesiSurveiM1 ? 'bg-sawah-500' : 'bg-paper-400' }} text-xs text-paper-50 font-bold">
                     {{ $sesiSurveiM1 ? '✓' : '•' }}
                 </span>
@@ -127,7 +127,7 @@
                 {{ $sesiSurveiM1 ? 'Sesi #' . $sesiSurveiM1->id : 'Input Langsung' }}
             </p>
             <p class="mt-1 text-xs text-ink-600">
-                {{ $sesiSurveiM1 ? 'Disurvei: ' . ($sesiSurveiM1->tanggal_survei ? $sesiSurveiM1->tanggal_survei->format('d/m/Y') : '—') : 'Belum sinkron dari survei M1' }}
+                {{ $sesiSurveiM1 ? 'Disurvei: ' . ($sesiSurveiM1->tanggal_survei ? $sesiSurveiM1->tanggal_survei->format('d/m/Y') : '—') : 'Belum sinkron dari survei' }}
             </p>
         </div>
     </div>
@@ -195,7 +195,7 @@
                         <td class="px-5 py-3.5 text-xs text-ink-600">
                             @if ($record && $record->sesiSurvei)
                                 <a href="{{ route('survei.sesi.show', $record->id_sesi_survei) }}" class="inline-flex items-center gap-1 text-merah-600 hover:underline">
-                                    <span>M1 Sesi #{{ $record->id_sesi_survei }}</span>
+                                    <span>Survei Sesi #{{ $record->id_sesi_survei }}</span>
                                     <span>&rarr;</span>
                                 </a>
                             @else

@@ -35,7 +35,7 @@
                         <option value="">-- Pilih Transaksi Penjualan --</option>
                         @foreach ($sales as $s)
                             <option value="{{ $s->id_penjualan }}" @selected($sale && $sale->id_penjualan == $s->id_penjualan)>
-                                {{ $s->kode_penjualan }} — {{ $s->pihak?->nama ?? 'Pembeli Umum' }} ({{ $s->tanggal_transaksi?->format('d M Y') ?? '—' }}) — Rp {{ number_format((float) $s->total_bayar, 0, ',', '.') }}
+                                {{ $s->kode_penjualan }} — {{ $s->nama_pembeli ?: ($s->pihak?->nama ?? 'Pembeli Umum') }} ({{ $s->tanggal_transaksi?->format('d M Y') ?? '—' }}) — Rp {{ number_format((float) $s->total_bayar, 0, ',', '.') }}
                             </option>
                         @endforeach
                     </select>
@@ -57,7 +57,7 @@
                     </div>
                     <div>
                         <span class="text-xs text-ink-600 uppercase font-medium">Pembeli</span>
-                        <p class="font-semibold text-ink-900">{{ $sale->pihak?->nama ?? 'Pembeli Umum' }}</p>
+                        <p class="font-semibold text-ink-900">{{ $sale->nama_pembeli ?: ($sale->pihak?->nama ?? 'Pembeli Umum') }}</p>
                     </div>
                     <div>
                         <span class="text-xs text-ink-600 uppercase font-medium">Total Belanja</span>
@@ -156,4 +156,3 @@
         }
     </script>
 </x-layouts.app>
-

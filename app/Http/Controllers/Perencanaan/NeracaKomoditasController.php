@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Perencanaan;
 use App\Http\Controllers\Concerns\ModuleCrudController;
 use App\Http\Controllers\Concerns\ResolvesWilayahAktif;
 use App\Models\Master\Komoditas;
+use App\Models\Master\Barang;
+use App\Models\Master\Gudang;
+use App\Models\Perencanaan\PermintaanPengadaan;
 use App\Models\Perencanaan\HasilKalkulasi;
 use App\Models\Perencanaan\KebutuhanKomoditas;
 use App\Models\Perencanaan\KetersediaanKomoditas;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Support\Perencanaan\PeriodeKalkulasi;
 
@@ -168,5 +173,69 @@ class NeracaKomoditasController extends ModuleCrudController
             'title' => 'Detail Neraca: ' . ($hasil->komoditas?->nama ?? 'Komoditas'),
             'routeBase' => $this->routeBase,
         ]);
+    }
+
+    public function ajukanKeGudang(int|string $id): RedirectResponse
+    {
+        $idWilayah = $this->wilayahAktifId();
+        $hasil = HasilKalkulasi::query()
+            ->where('id_wilayah', $idWilayah)
+            ->whereKey($id)
+            ->where('status_surplus_defisit', 'surplus')
+            ->with('komoditas')
+            ->firstOrFail();
+        $user = auth()->user();
+
+        $barang = Barang::query()
+            ->where('id_komoditas', $hasil->id_komoditas)
+            ->where('is_active', true)
+            ->first();
+        if (! $barang) {
+            return back()->with('error', 'Komoditas surplus belum memiliki master barang aktif untuk diajukan ke gudang.');
+        }
+
+        $gudang = Gudang::query()
+            ->where('id_entitas', $user->id_entitas)
+            ->where('is_active', true)
+            ->orderBy('nama_gudang')
+            ->first();
+        if (! $gudang) {
+            return back()->with('error', 'Belum ada gudang aktif untuk entitas ini.');
+        }
+
+        $sudahDiajukan = DB::table('permintaan_pengadaan_detail')
+            ->join('permintaan_pengadaan', 'permintaan_pengadaan.id_permintaan', '=', 'permintaan_pengadaan_detail.id_permintaan')
+            ->where('permintaan_pengadaan_detail.id_hasil', $hasil->id_hasil)
+            ->whereNotIn('permintaan_pengadaan.status', ['dibatalkan', 'ditolak'])
+            ->exists();
+        if ($sudahDiajukan) {
+            return back()->with('error', 'Surplus komoditas ini sudah memiliki pengajuan ke gudang yang masih aktif.');
+        }
+
+        DB::transaction(function () use ($hasil, $barang, $gudang, $user): void {
+            $pengajuan = PermintaanPengadaan::create([
+                'id_entitas' => $user->id_entitas,
+                'kode_permintaan' => PermintaanPengadaan::generateKode((int) $user->id_entitas),
+                'tgl_pengajuan' => now()->toDateString(),
+                'id_unit_usaha' => $barang->id_unit_usaha,
+                'id_gudang' => $gudang->id_gudang,
+                'total_nilai' => 0,
+                'status' => 'draft',
+                'catatan' => 'Pengajuan penerimaan surplus dari neraca komoditas. Verifikasi volume dan kualitas sebelum penerimaan gudang.',
+                'created_by' => auth()->id(),
+            ]);
+            $pengajuan->detail()->create([
+                'id_barang' => $barang->id_barang,
+                'id_hasil' => $hasil->id_hasil,
+                'jumlah_diminta' => (float) $hasil->selisih,
+                'harga_perkiraan' => 0,
+                'subtotal' => 0,
+            ]);
+        });
+
+        return redirect()->route('perencanaan.neraca-komoditas.index', [
+            'tahun' => $hasil->tahun,
+            'bulan' => $hasil->bulan,
+        ])->with('status', 'Pengajuan penerimaan surplus berhasil dibuat sebagai draft untuk diverifikasi gudang.');
     }
 }

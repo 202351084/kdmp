@@ -20,11 +20,19 @@ class PerbandinganHargaController extends ModuleCrudController
 
     public function index(Request $request): View
     {
+        $validated = $request->validate([
+            'id_komoditas' => ['nullable', 'integer', 'exists:komoditas,id'],
+            'tahun' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'periode' => ['nullable', 'in:ganjil,genap'],
+            'bulan' => ['nullable', 'integer', 'min:1', 'max:12'],
+        ]);
         $user = auth()->user();
         $service = app(PerbandinganHargaService::class);
-        $selected = $request->integer('id_komoditas');
-        $tahun = $request->integer('tahun', now()->year);
-        $periode = $request->query('periode', PeriodeKalkulasi::fromMonth(now()->month));
+        $selected = (int) ($validated['id_komoditas'] ?? 0);
+        $tahun = (int) ($validated['tahun'] ?? now()->year);
+        $periode = isset($validated['bulan'])
+            ? (int) $validated['bulan']
+            : ($validated['periode'] ?? PeriodeKalkulasi::fromMonth(now()->month));
         $comparison = $selected > 0
             ? $service->bandingkan((int) $user->id_entitas, $selected, $tahun, $periode)
             : ['items' => collect(), 'lowest' => null, 'highest' => null, 'difference' => null, 'satuan' => null];

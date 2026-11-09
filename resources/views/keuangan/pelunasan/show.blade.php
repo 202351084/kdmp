@@ -54,6 +54,30 @@
                         Rp {{ number_format($pelunasan->total_nilai, 2, ',', '.') }}
                     </dd>
                 </div>
+                @if($pelunasan->jenis === 'terima_piutang' && $pelunasan->transfer_penerima_rekening)
+                    <div class="col-span-2 rounded-sm border border-sky-200 bg-sky-50/70 p-3 sm:col-span-4">
+                        <dt class="font-semibold uppercase tracking-wider text-sky-900">Rincian Transfer Pelunasan</dt>
+                        <dd class="mt-2 grid gap-3 text-sky-950 sm:grid-cols-2">
+                            <div>
+                                <p class="text-xs uppercase text-sky-800">Rekening pengirim</p>
+                                <p class="mt-1 font-medium">{{ $pelunasan->transfer_pengirim_nama }} · {{ $pelunasan->transfer_pengirim_bank }}</p>
+                                <p>{{ $pelunasan->transfer_pengirim_rekening }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs uppercase text-sky-800">Rekening penerima</p>
+                                <p class="mt-1 font-medium">{{ $pelunasan->transfer_penerima_nama }}</p>
+                                <p>{{ $pelunasan->transfer_penerima_rekening }}</p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <p class="text-xs uppercase text-sky-800">Referensi transfer</p>
+                                <p class="mt-1 break-all font-medium">{{ $pelunasan->transfer_no_referensi }}</p>
+                                <p class="mt-1 text-xs text-sky-800">
+                                    Dana dikonfirmasi diterima{{ $pelunasan->transfer_dikonfirmasi_pada ? ' pada '.$pelunasan->transfer_dikonfirmasi_pada->format('d M Y H:i') : '' }}
+                                </p>
+                            </div>
+                        </dd>
+                    </div>
+                @endif
                 @if($pelunasan->catatan)
                     <div class="col-span-2 sm:col-span-4">
                         <dt class="text-xs uppercase tracking-wider text-ink-500">Catatan</dt>
