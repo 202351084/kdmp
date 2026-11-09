@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Master\Gudang;
 use App\Models\Master\Pihak;
+use App\Models\Keuangan\Piutang;
 use App\Models\Penjualan\DetailPenjualan;
 use App\Models\Penjualan\Penjualan;
 use App\Models\Penjualan\ReturPenjualan;
@@ -11,6 +12,7 @@ use App\Models\Penjualan\ReturPenjualanDetail;
 use App\Services\Finance\JurnalService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 use RuntimeException;
 
 class PenjualanService
@@ -40,24 +42,81 @@ class PenjualanService
 
     public static function createSale(
         int $idEntitas,
-        int $idPihak,
+        ?int $idPihak,
         int $idUnitUsaha,
         string $metodeBayar,
         array $items,
+        ?int $idKasBank = null,
+        array $transferDetails = [],
+        ?string $tglJatuhTempo = null,
+        ?string $namaPembeli = null,
     ): Penjualan {
-        if (! in_array($metodeBayar, ['tunai', 'transfer'], true)) {
+        if (! in_array($metodeBayar, ['tunai', 'transfer', 'kredit'], true)) {
             throw new RuntimeException('Metode pembayaran tidak valid.');
+        }
+
+        if ($metodeBayar === 'transfer' && (
+            $idKasBank === null
+            || blank($transferDetails['pengirim_nama'] ?? null)
+            || blank($transferDetails['pengirim_bank'] ?? null)
+            || blank($transferDetails['pengirim_rekening'] ?? null)
+            || blank($transferDetails['no_referensi'] ?? null)
+            || ($transferDetails['dikonfirmasi'] ?? false) !== true
+        )) {
+            throw new RuntimeException('Lengkapi rekening tujuan dan data transfer, lalu konfirmasi dana telah diterima.');
+        }
+
+        if ($metodeBayar === 'kredit' && (
+            blank($tglJatuhTempo)
+            || Carbon::parse($tglJatuhTempo)->startOfDay()->lt(today())
+        )) {
+            throw new RuntimeException('Tanggal jatuh tempo kredit wajib diisi dan tidak boleh sebelum hari ini.');
         }
 
         if ($items === []) {
             throw new RuntimeException('Keranjang penjualan masih kosong.');
         }
 
-        return DB::transaction(function () use ($idEntitas, $idPihak, $idUnitUsaha, $metodeBayar, $items) {
-            $pembeli = Pihak::query()
-                ->where('id_pihak', $idPihak)
-                ->where('is_active', true)
-                ->firstOrFail();
+        return DB::transaction(function () use ($idEntitas, $idPihak, $idUnitUsaha, $metodeBayar, $items, $idKasBank, $transferDetails, $tglJatuhTempo, $namaPembeli) {
+            if ($idPihak === null && filled($namaPembeli)) {
+                $pembeli = Pihak::query()->firstOrCreate(
+                    [
+                        'id_entitas' => $idEntitas,
+                        'jenis_pihak' => 'entitas_lain',
+                        'nama' => 'Pembeli Umum',
+                    ],
+                    ['is_anggota' => false, 'is_active' => true],
+                );
+                if (! $pembeli->is_active) {
+                    $pembeli->update(['is_active' => true]);
+                }
+            } else {
+                $pembeli = Pihak::query()
+                    ->where('id_pihak', $idPihak)
+                    ->where('is_active', true)
+                    ->firstOrFail();
+            }
+
+            $kasBank = null;
+            if ($metodeBayar !== 'kredit') {
+                $kasBank = DB::table('master_kas_bank')
+                    ->where('id_entitas', $idEntitas)
+                    ->where('jenis', $metodeBayar === 'tunai' ? 'kas' : 'bank')
+                    ->where('is_active', true)
+                    ->when($metodeBayar === 'transfer', fn ($query) => $query->whereNotNull('no_rekening')->where('no_rekening', '<>', ''))
+                    ->when($metodeBayar === 'transfer', fn ($query) => $query->where('id_kas_bank', $idKasBank))
+                    ->orderByDesc('is_default')
+                    ->orderBy('id_kas_bank')
+                    ->first();
+            }
+
+            if ($metodeBayar !== 'kredit' && ! $kasBank) {
+                throw new RuntimeException(
+                    $metodeBayar === 'transfer'
+                        ? 'Rekening bank tujuan tidak aktif atau bukan milik entitas ini.'
+                        : 'Rekening kas aktif untuk entitas ini belum dikonfigurasi.',
+                );
+            }
 
             $idGudang = Gudang::query()
                 ->where('id_entitas', $idEntitas)
@@ -110,18 +169,23 @@ class PenjualanService
                 'id_entitas' => $idEntitas,
                 'kode_penjualan' => self::generateSaleCode($idEntitas),
                 'id_pihak' => $pembeli->id_pihak,
+                'nama_pembeli' => filled($namaPembeli) ? trim($namaPembeli) : $pembeli->nama,
                 'id_unit_usaha' => $idUnitUsaha,
                 'id_gudang' => $idGudang,
                 'tanggal_transaksi' => now()->toDateString(),
+                'tgl_jatuh_tempo' => $metodeBayar === 'kredit' ? $tglJatuhTempo : null,
                 'is_pembeli_anggota' => $pembeli->is_anggota,
                 'ada_baris_konsinyasi' => false,
-                'id_kas_bank' => DB::table('master_kas_bank')
-                    ->where('id_entitas', $idEntitas)
-                    ->where('jenis', $metodeBayar === 'tunai' ? 'kas' : 'bank')
-                    ->where('is_active', true)
-                    ->value('id_kas_bank')
-                    ?? DB::table('master_kas_bank')->where('is_active', true)->value('id_kas_bank'),
+                'id_kas_bank' => $kasBank?->id_kas_bank,
                 'metode_bayar' => $metodeBayar,
+                'transfer_pengirim_nama' => $metodeBayar === 'transfer' ? trim($transferDetails['pengirim_nama']) : null,
+                'transfer_pengirim_bank' => $metodeBayar === 'transfer' ? trim($transferDetails['pengirim_bank']) : null,
+                'transfer_pengirim_rekening' => $metodeBayar === 'transfer' ? trim($transferDetails['pengirim_rekening']) : null,
+                'transfer_no_referensi' => $metodeBayar === 'transfer' ? trim($transferDetails['no_referensi']) : null,
+                'transfer_penerima_nama' => $metodeBayar === 'transfer' ? $kasBank->nama : null,
+                'transfer_penerima_rekening' => $metodeBayar === 'transfer' ? $kasBank->no_rekening : null,
+                'transfer_dikonfirmasi_pada' => $metodeBayar === 'transfer' ? now() : null,
+                'transfer_dikonfirmasi_oleh' => $metodeBayar === 'transfer' ? auth()->id() : null,
                 'total_bruto' => $total,
                 'diskon' => 0,
                 'total_bayar' => $total,
@@ -168,31 +232,64 @@ class PenjualanService
             $sale->update(['total_hpp' => $totalHpp]);
 
             // Realtime Auto-Posting Jurnal Akuntansi (Opsi A)
-            $kodeTransaksi = $metodeBayar === 'transfer' ? 'JTFW' : 'JTW';
+            $kodeTransaksi = match ($metodeBayar) {
+                'transfer' => 'JTFW',
+                'kredit' => 'JKW',
+                default => 'JTW',
+            };
             $unitUsaha = DB::table('master_unit_usaha')->where('id_unit_usaha', $idUnitUsaha)->first();
 
-            $jurnal = app(JurnalService::class)->posting(
-                $kodeTransaksi,
-                [
-                    'tanggal_jurnal' => $sale->tanggal_transaksi,
-                    'nomor_nota' => $sale->kode_penjualan,
-                    'total_bayar' => (float) $sale->total_bayar,
-                    'total_hpp' => (float) $totalHpp,
-                    'id_kas_bank' => $sale->id_kas_bank,
-                    'kode_unit' => $unitUsaha?->kode_unit_usaha,
-                    'is_anggota' => (bool) $pembeli->is_anggota,
-                    'id_pihak' => $pembeli->id_pihak,
-                ],
-                Penjualan::class,
-                (int) $sale->id_penjualan,
-                "Penjualan {$sale->kode_penjualan} ({$pembeli->nama})",
-                $idEntitas,
-            );
+            $idJurnal = null;
+            $statusPosting = 'F';
+
+            try {
+                if (class_exists(JurnalService::class)) {
+                    $jurnal = app(JurnalService::class)->posting(
+                        $kodeTransaksi,
+                        [
+                            'tanggal_jurnal' => $sale->tanggal_transaksi,
+                            'nomor_nota' => $sale->kode_penjualan,
+                            'total_bayar' => (float) $sale->total_bayar,
+                            'total_hpp' => (float) $totalHpp,
+                            'id_kas_bank' => $sale->id_kas_bank,
+                            'kode_unit' => $unitUsaha?->kode_unit_usaha,
+                            'is_anggota' => (bool) $pembeli->is_anggota,
+                            'id_pihak' => $pembeli->id_pihak,
+                        ],
+                        Penjualan::class,
+                        (int) $sale->id_penjualan,
+                        "Penjualan {$sale->kode_penjualan} ({$pembeli->nama})",
+                        $idEntitas,
+                    );
+                    $idJurnal = $jurnal?->id_jurnal;
+                    $statusPosting = $idJurnal ? 'T' : 'F';
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Posting jurnal penjualan {$sale->kode_penjualan} dilewati: " . $e->getMessage());
+                $idJurnal = null;
+                $statusPosting = 'F';
+            }
 
             $sale->update([
-                'status_posting' => 'T',
-                'id_jurnal' => $jurnal->id_jurnal,
+                'status_posting' => $statusPosting,
+                'id_jurnal' => $idJurnal,
             ]);
+
+            if ($metodeBayar === 'kredit') {
+                Piutang::updateOrCreate(
+                    ['sumber_tipe' => 'PENJUALAN', 'sumber_id' => $sale->id_penjualan],
+                    [
+                        'id_entitas' => $idEntitas,
+                        'id_pihak' => $pembeli->id_pihak,
+                        'kode_akun' => '1132',
+                        'tanggal' => $sale->tanggal_transaksi,
+                        'tgl_jatuh_tempo' => $tglJatuhTempo,
+                        'nilai_awal' => $sale->total_bayar,
+                        'nilai_terbayar' => 0,
+                        'status' => 'belum_lunas',
+                    ],
+                );
+            }
 
             return $sale->load(['pihak', 'detail.barang.satuanDasar']);
         });
@@ -295,21 +392,28 @@ class PenjualanService
             if ($return->jenis_penyelesaian === 'uang') {
                 $unitUsaha = $sale->unitUsaha ?? DB::table('master_unit_usaha')->where('id_unit_usaha', $sale->id_unit_usaha)->first();
 
-                $jurnal = app(JurnalService::class)->posting(
-                    'RJU',
-                    [
-                        'tanggal_jurnal' => $return->tgl_retur,
-                        'nomor_nota' => $return->kode_retur,
-                        'total_nilai' => (float) $return->total_nilai,
-                        'total_hpp' => (float) $return->total_hpp,
-                        'kode_unit' => $unitUsaha?->kode_unit_usaha,
-                        'id_pihak' => $sale->id_pihak,
-                    ],
-                    ReturPenjualan::class,
-                    (int) $return->id_retur,
-                    "Retur Penjualan {$return->kode_retur} untuk {$sale->kode_penjualan}",
-                    $return->id_entitas,
-                );
+                try {
+                    if (class_exists(JurnalService::class)) {
+                        $jurnal = app(JurnalService::class)->posting(
+                            'RJU',
+                            [
+                                'tanggal_jurnal' => $return->tgl_retur,
+                                'nomor_nota' => $return->kode_retur,
+                                'total_nilai' => (float) $return->total_nilai,
+                                'total_hpp' => (float) $return->total_hpp,
+                                'kode_unit' => $unitUsaha?->kode_unit_usaha,
+                                'id_pihak' => $sale->id_pihak,
+                            ],
+                            ReturPenjualan::class,
+                            (int) $return->id_retur,
+                            "Retur Penjualan {$return->kode_retur} untuk {$sale->kode_penjualan}",
+                            $return->id_entitas,
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Posting jurnal retur penjualan {$return->kode_retur} dilewati: " . $e->getMessage());
+                    $jurnal = null;
+                }
             }
 
             $return->update([

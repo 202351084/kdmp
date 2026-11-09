@@ -17,9 +17,10 @@
                 </div>
             @endif
 
-            <form action="{{ route("$routeBase.update", $item) }}" method="POST" class="space-y-4">
+            <form action="{{ route("$routeBase.update", $item) }}" method="POST" class="space-y-4" data-source="{{ $item->sumber_pembelian }}">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="jenis_pembayaran" value="kredit" id="consignment_payment_value" @disabled($item->sumber_pembelian !== 'pengambilan_konsinyasi')>
 
                 <!-- Data Dokumen -->
                 <div class="rounded-sm border border-paper-300 bg-paper-50 p-4">
@@ -37,6 +38,9 @@
                             <p class="font-semibold text-ink-900">{{ $item->tanggal_transaksi?->format('d M Y') ?? '—' }}</p>
                         </div>
                     </div>
+                    @if ($item->sumber_pembelian === 'pengambilan_konsinyasi')
+                        <p class="mt-3 text-sm text-sky-900">Pengambilan konsinyasi dicatat sebagai hutang kepada desa pengirim. Pembayaran kas/bank tidak digunakan.</p>
+                    @endif
                 </div>
 
                 <!-- Unit Usaha & Gudang -->
@@ -81,33 +85,28 @@
                             <thead class="bg-paper-100 text-left text-ink-700">
                                 <tr>
                                     <th class="px-3 py-2">Barang</th>
-                                    <th class="px-3 py-2">Satuan</th>
-                                    <th class="px-3 py-2">Qty</th>
-                                    <th class="px-3 py-2">Harga Satuan</th>
+                                    <th class="px-3 py-2">Qty (KG)</th>
+                                    <th class="px-3 py-2">Harga per KG</th>
                                     <th class="px-3 py-2 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="purchase_rows">
-                                @foreach (old('items', $item->detail->map(fn($d) => ['id_barang' => $d->id_barang, 'id_satuan' => $d->id_satuan_input, 'qty_dasar' => $d->qty_input, 'harga_satuan' => $d->harga_satuan_input])) as $index => $row)
+                                @foreach (old('items', $editItems) as $index => $row)
                                     <tr class="purchase-row">
                                         <td class="px-3 py-2">
                                             <select name="items[{{ $index }}][id_barang]" onchange="updatePurchaseUnits(this)" class="purchase-barang w-full rounded-sm border border-paper-300 bg-paper-50 px-2 py-1.5" required>
                                                 <option value="">-- Pilih Barang --</option>
                                                 @foreach ($barangs as $barang)
-                                                    <option value="{{ $barang->id_barang }}" @selected($row['id_barang'] == $barang->id_barang) data-base-unit="{{ $barang->id_satuan_dasar }}" data-base-code="{{ $barang->satuanDasar?->kode_satuan }}" data-conversions="{{ $barang->konversiSatuan->map(fn ($c) => ['id' => (int) $c->id_satuan, 'code' => $c->satuan?->kode_satuan, 'factor' => (float) $c->faktor_ke_dasar, 'default' => (bool) $c->is_default_beli])->values()->toJson() }}">{{ $barang->nama_barang }}</option>
+                                                    <option value="{{ $barang->id_barang }}" @disabled(!in_array((int) $barang->id_barang, $barangKgIds, true)) @selected($row['id_barang'] == $barang->id_barang) data-base-unit="{{ $barang->id_satuan_dasar }}" data-base-code="{{ $barang->satuanDasar?->kode_satuan }}" data-conversions="{{ $barang->konversiSatuan->filter(fn ($c) => strtoupper($c->satuan?->kode_satuan ?? '') === 'KG')->map(fn ($c) => ['id' => (int) $c->id_satuan, 'code' => 'KG', 'factor' => (float) $c->faktor_ke_dasar, 'default' => (bool) $c->is_default_beli])->values()->toJson() }}">{{ $barang->nama_barang }}</option>
                                                 @endforeach
                                             </select>
-                                        </td>
-                                        <td class="px-3 py-2">
-                                            <select name="items[{{ $index }}][id_satuan]" data-selected="{{ $row['id_satuan'] }}" required class="purchase-unit w-full rounded-sm border border-paper-300 bg-paper-50 px-2 py-1.5">
-                                                <option value="">-- Pilih Satuan --</option>
-                                            </select>
+                                            <input type="hidden" name="items[{{ $index }}][id_satuan]" class="purchase-unit">
                                         </td>
                                         <td class="px-3 py-2">
                                             <input type="number" step="0.01" min="0.01" name="items[{{ $index }}][qty_dasar]" value="{{ $row['qty_dasar'] }}" required class="w-full rounded-sm border border-paper-300 bg-paper-50 px-2 py-1.5 text-right">
                                         </td>
                                         <td class="px-3 py-2">
-                                            <input type="number" step="0.01" min="0" name="items[{{ $index }}][harga_satuan]" value="{{ $row['harga_satuan'] }}" required class="w-full rounded-sm border border-paper-300 bg-paper-50 px-2 py-1.5 text-right">
+                                            <input type="number" step="0.01" min="{{ $item->sumber_pembelian === 'pengambilan_konsinyasi' ? '0.01' : '0' }}" name="items[{{ $index }}][harga_satuan]" value="{{ $row['harga_satuan'] }}" required class="w-full rounded-sm border border-paper-300 bg-paper-50 px-2 py-1.5 text-right">
                                         </td>
                                         <td class="px-3 py-2 text-center">
                                             <button type="button" onclick="removePurchaseRow(this)" class="text-xs text-merah-600 hover:text-merah-700">Hapus</button>
@@ -117,6 +116,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <p class="mt-2 text-xs text-ink-600">Jumlah dan harga wajib menggunakan KG dan harga per KG. Baris lama yang barangnya tidak memiliki konversi KG harus dihapus atau diganti.</p>
                 </div>
 
                 <!-- Supplier dan Pembayaran -->
@@ -124,7 +124,7 @@
                     <h3 class="mb-3 text-sm font-semibold text-ink-900">Data Supplier dan Pembayaran</h3>
                     <div class="space-y-3">
                         <label class="block text-sm">
-                            <span class="text-ink-700 font-medium">Supplier *</span>
+                            <span class="text-ink-700 font-medium">{{ $item->sumber_pembelian === 'pengambilan_konsinyasi' ? 'Desa Pengirim *' : 'Supplier *' }}</span>
                             <select name="id_pihak" required class="mt-1 w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2">
                                 <option value="">-- Pilih Supplier --</option>
                                 @foreach ($pihaks as $pihak)
@@ -135,9 +135,9 @@
                             </select>
                         </label>
 
-                        <label class="block text-sm">
+                        <label id="payment_method_field" class="block text-sm" @if ($item->sumber_pembelian === 'pengambilan_konsinyasi') style="display: none;" @endif>
                             <span class="text-ink-700 font-medium">Jenis Pembayaran *</span>
-                            <select name="jenis_pembayaran" required onchange="togglePaymentFields()" class="mt-1 w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2">
+                            <select name="jenis_pembayaran" required onchange="togglePaymentFields()" @disabled($item->sumber_pembelian === 'pengambilan_konsinyasi') class="mt-1 w-full rounded-sm border border-paper-300 bg-paper-50 px-3 py-2">
                                 <option value="">-- Pilih Jenis --</option>
                                 <option value="tunai" @selected(old('jenis_pembayaran', $item->jenis_pembayaran) === 'tunai')>Tunai</option>
                                 <option value="transfer" @selected(old('jenis_pembayaran', $item->jenis_pembayaran) === 'transfer')>Transfer</option>
@@ -195,9 +195,21 @@
     <script>
         function togglePaymentFields() {
             const jenisSelect = document.querySelector('select[name="jenis_pembayaran"]');
-            const jenis = jenisSelect ? jenisSelect.value : '';
+            const form = document.querySelector('form[data-source]');
+            const isConsignment = form.dataset.source === 'pengambilan_konsinyasi';
+            const paymentField = document.getElementById('payment_method_field');
+            const consignmentPaymentValue = document.getElementById('consignment_payment_value');
+            const jenis = isConsignment ? 'kredit' : (jenisSelect ? jenisSelect.value : '');
             const isCredit = jenis === 'kredit';
-            const isCashOrBank = jenis === 'tunai' || jenis === 'transfer';
+            const isCashOrBank = !isConsignment && (jenis === 'tunai' || jenis === 'transfer');
+
+            paymentField.style.display = isConsignment ? 'none' : 'block';
+            jenisSelect.disabled = isConsignment;
+            jenisSelect.required = !isConsignment;
+            consignmentPaymentValue.disabled = !isConsignment;
+            if (isConsignment) {
+                jenisSelect.value = 'kredit';
+            }
 
             const jatuhTempoSection = document.getElementById('jatuh_tempo_section');
             const jatuhTempoInput = document.querySelector('input[name="tgl_jatuh_tempo"]');
@@ -256,42 +268,32 @@
 
         function updatePurchaseUnits(barangSelect) {
             const row = barangSelect.closest('.purchase-row');
-            const unitSelect = row.querySelector('.purchase-unit');
+            const unitInput = row.querySelector('.purchase-unit');
             const selectedBarang = barangSelect.selectedOptions[0];
-            const placeholder = new Option('-- Pilih Satuan --', '');
-            const currentSelected = unitSelect.dataset.selected || unitSelect.value;
-            unitSelect.replaceChildren(placeholder);
+            unitInput.value = '';
 
             if (!barangSelect.value) {
-                unitSelect.disabled = true;
                 return;
             }
 
             let conversions = JSON.parse(selectedBarang.dataset.conversions || '[]');
             const baseUnitId = Number(selectedBarang.dataset.baseUnit);
-            if (!conversions.some((conversion) => Number(conversion.id) === baseUnitId)) {
+            if (selectedBarang.dataset.baseCode?.toUpperCase() === 'KG' && !conversions.some((conversion) => Number(conversion.id) === baseUnitId)) {
                 conversions.push({
                     id: baseUnitId,
-                    code: selectedBarang.dataset.baseCode,
+                    code: 'KG',
                     factor: 1,
                     default: true,
                 });
             }
 
-            conversions.sort((left, right) => Number(right.default) - Number(left.default));
-            conversions.forEach((conversion) => {
-                unitSelect.add(new Option(conversion.code, String(conversion.id)));
-            });
-
-            if (currentSelected && conversions.some((c) => String(c.id) === String(currentSelected))) {
-                unitSelect.value = String(currentSelected);
-            } else {
-                const preferred = conversions.find((c) => c.default) || conversions[0];
-                if (preferred) {
-                    unitSelect.value = String(preferred.id);
-                }
+            if (conversions.length === 0) {
+                return;
             }
-            unitSelect.disabled = false;
+
+            conversions.sort((left, right) => Number(right.default) - Number(left.default));
+            const preferred = conversions.find((conversion) => conversion.default) || conversions[0];
+            unitInput.value = String(preferred?.id ?? '');
         }
 
         function addPurchaseRow() {
@@ -306,14 +308,10 @@
                     <select name="items[${index}][id_barang]" onchange="updatePurchaseUnits(this)" class="purchase-barang w-full rounded-sm border border-paper-300 bg-paper-50 px-2 py-1.5" required>
                         <option value="">-- Pilih Barang --</option>
                         @foreach ($barangs as $barang)
-                            <option value="{{ $barang->id_barang }}" data-base-unit="{{ $barang->id_satuan_dasar }}" data-base-code="{{ $barang->satuanDasar?->kode_satuan }}" data-conversions="{{ $barang->konversiSatuan->map(fn ($c) => ['id' => (int) $c->id_satuan, 'code' => $c->satuan?->kode_satuan, 'factor' => (float) $c->faktor_ke_dasar, 'default' => (bool) $c->is_default_beli])->values()->toJson() }}">{{ $barang->nama_barang }}</option>
+                            <option value="{{ $barang->id_barang }}" @disabled(!in_array((int) $barang->id_barang, $barangKgIds, true)) data-base-unit="{{ $barang->id_satuan_dasar }}" data-base-code="{{ $barang->satuanDasar?->kode_satuan }}" data-conversions="{{ $barang->konversiSatuan->filter(fn ($c) => strtoupper($c->satuan?->kode_satuan ?? '') === 'KG')->map(fn ($c) => ['id' => (int) $c->id_satuan, 'code' => 'KG', 'factor' => (float) $c->faktor_ke_dasar, 'default' => (bool) $c->is_default_beli])->values()->toJson() }}">{{ $barang->nama_barang }}</option>
                         @endforeach
                     </select>
-                </td>
-                <td class="px-3 py-2">
-                    <select name="items[${index}][id_satuan]" required disabled class="purchase-unit w-full rounded-sm border border-paper-300 bg-paper-50 px-2 py-1.5">
-                        <option value="">-- Pilih Satuan --</option>
-                    </select>
+                    <input type="hidden" name="items[${index}][id_satuan]" class="purchase-unit">
                 </td>
                 <td class="px-3 py-2">
                     <input type="number" step="0.01" min="0.01" name="items[${index}][qty_dasar]" required class="w-full rounded-sm border border-paper-300 bg-paper-50 px-2 py-1.5 text-right">
@@ -341,4 +339,3 @@
         });
     </script>
 </x-layouts.app>
-

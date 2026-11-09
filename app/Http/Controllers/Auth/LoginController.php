@@ -36,6 +36,16 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
+        $isPurchasingUser = $user->hasPeran('pembelian');
+        $isSalesUser = $user->hasPeran('kasir') || $user->hasPeran('penjualan');
+        if ($isPurchasingUser || $isSalesUser) {
+            $route = $isPurchasingUser
+                ? 'pembelian.pembelian.index'
+                : 'penjualan.penjualan.index';
+
+            return redirect()->route($route);
+        }
+
         if ($user->id_entitas === null) {
             return redirect()->intended(route('admin.dashboard'));
         }

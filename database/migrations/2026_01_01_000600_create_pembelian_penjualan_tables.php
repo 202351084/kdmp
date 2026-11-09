@@ -71,8 +71,8 @@ return new class extends Migration
         });
 
         /**
-         * Penjualan ke warga SELALU tunai atau transfer.
-         * Kode JKW (jual kredit warga) sengaja tidak ada di master_transaksi.
+         * Penjualan ke warga dapat tunai, transfer, atau kredit.
+         * Penjualan kredit dicatat sebagai piutang dengan kode jurnal JKW.
          *
          * is_pembeli_anggota DISALIN saat transaksi, tidak di-join saat pelaporan.
          * Kalau di-join, warga yang keluar keanggotaan tahun depan akan mengubah
@@ -90,7 +90,7 @@ return new class extends Migration
             $t->boolean('ada_baris_konsinyasi')->default(false)
               ->comment('true jika nota ini memuat barang titipan desa lain');
             $t->foreignId('id_kas_bank')->nullable()->constrained('master_kas_bank', 'id_kas_bank');
-            $t->enum('metode_bayar', ['tunai', 'transfer']);
+            $t->enum('metode_bayar', ['tunai', 'transfer', 'kredit']);
             $t->decimal('total_bruto', 18, 2)->default(0);
             $t->decimal('diskon', 18, 2)->default(0);
             $t->decimal('total_bayar', 18, 2)->default(0);
@@ -163,4 +163,3 @@ return new class extends Migration
         }
     }
 };
-

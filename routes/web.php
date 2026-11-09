@@ -135,6 +135,8 @@ Route::middleware('auth')->group(function () {
     // ===== M5 Ã¢â‚¬â€ Pembelian =====
     Route::prefix('pembelian')->name('pembelian.')->group(function () {
     Route::resource('pembelian', PembelianController::class);
+    Route::get('pembelian/{pembelian}/invoice', [PembelianController::class, 'invoice'])
+        ->name('pembelian.invoice');
 
     Route::patch('pembelian/{pembelian}/approve', [PembelianController::class, 'approve'])
         ->name('approve');
@@ -152,6 +154,8 @@ Route::middleware('auth')->group(function () {
         ->name('show-retur');
 
     Route::resource('retur', ReturPembelianController::class);
+    Route::get('retur/{retur}/invoice', [ReturPembelianController::class, 'invoice'])
+        ->name('retur.invoice');
     Route::patch('retur/{retur}/approve', [ReturPembelianController::class, 'approve'])
         ->name('retur.approve');
     });
