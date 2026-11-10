@@ -30,6 +30,50 @@ class PublicSurveiProdusenController extends Controller
     private array $satuanList = ['kg', 'ton', 'kwintal', 'gram', 'liter', 'buah', 'ikat', 'pack', 'karung', 'lusin'];
 
     /**
+     * Frekuensi panen per tahun (nilai tetap, tanpa tabel database).
+     * Sumber data: alursurvei.txt — frekuensi = 365 hari ÷ durasi satu siklus lengkap (tanam/pelihara s.d. panen).
+     * Bila acuan berupa rentang (mis. ±3–4 siklus), dipakai batas bawah (siklus lengkap yang pasti tercapai).
+     * Komoditas yang di sumbernya "belum dihitung" / bukan siklus tanam-panen sengaja TIDAK dimasukkan,
+     * sehingga tidak diisi otomatis.
+     */
+    private array $frekuensiPanen = [
+        'padi sawah'         => ['item' => 'Padi sawah',         'frekuensi' => 2, 'rentang' => '±2',    'durasi' => '135–145 hari', 'sumber' => 'Kementan'],
+        'jagung pipilan'     => ['item' => 'Jagung pipilan',     'frekuensi' => 3, 'rentang' => '±3–4',  'durasi' => '80–103 hari',  'sumber' => 'BRMP'],
+        'kedelai'            => ['item' => 'Kedelai',            'frekuensi' => 4, 'rentang' => '±4–5',  'durasi' => '70–90 hari',   'sumber' => 'Kementan'],
+        'kacang tanah'       => ['item' => 'Kacang tanah',       'frekuensi' => 3, 'rentang' => '±3–4',  'durasi' => '90–105 hari',  'sumber' => 'BRMP'],
+        'bawang merah'       => ['item' => 'Bawang merah',       'frekuensi' => 3, 'rentang' => '±3–5',  'durasi' => '65–100 hari',  'sumber' => 'BRMP'],
+        'bayam'              => ['item' => 'Bayam',              'frekuensi' => 9, 'rentang' => '±9–12', 'durasi' => '25–40 hari',   'sumber' => 'Ditjen Hortikultura; BRMP'],
+        'cabai rawit'        => ['item' => 'Cabai rawit',        'frekuensi' => 3, 'rentang' => '±3–4',  'durasi' => '75–120 hari',  'sumber' => 'Kementan'],
+        'kangkung'           => ['item' => 'Kangkung',           'frekuensi' => 8, 'rentang' => '±8–12', 'durasi' => '27–45 hari',   'sumber' => 'Ditjen Hortikultura; BBPP'],
+        'sawi'               => ['item' => 'Sawi',               'frekuensi' => 6, 'rentang' => '±6',    'durasi' => '±60 hari',     'sumber' => 'BBPP Kupang'],
+        'semangka'           => ['item' => 'Semangka',           'frekuensi' => 5, 'rentang' => '±5–6',  'durasi' => '60–70 hari',   'sumber' => 'Kementan'],
+        'jamur tiram'        => ['item' => 'Jamur tiram',        'frekuensi' => 3, 'rentang' => '±3–4',  'durasi' => '90–120 hari (masa produktif baglog)', 'sumber' => 'Kementan'],
+        'daging sapi'        => ['item' => 'Daging sapi',        'frekuensi' => 2, 'rentang' => '±2–3',  'durasi' => '120–180 hari (khusus penggemukan)', 'sumber' => 'Permentan No. 46 Tahun 2015'],
+        'daging ayam broiler' => ['item' => 'Daging ayam broiler', 'frekuensi' => 8, 'rentang' => '±8–10', 'durasi' => '35–42 hari (belum termasuk jeda sanitasi kandang)', 'sumber' => 'Dinas Peternakan Kab. Lebak'],
+    ];
+
+    /** Nama lain yang dikenali → kunci pada $frekuensiPanen. */
+    private array $aliasFrekuensi = [
+        'padi'           => 'padi sawah',
+        'beras'          => 'padi sawah',
+        'jagung'         => 'jagung pipilan',
+        'sapi'           => 'daging sapi',
+        'sapi potong'    => 'daging sapi',
+        'ayam broiler'   => 'daging ayam broiler',
+        'broiler'        => 'daging ayam broiler',
+    ];
+
+    /** Peta nama (kanonik + alias) → data frekuensi, untuk dipakai di JavaScript. */
+    private function petaFrekuensi(): array
+    {
+        $peta = $this->frekuensiPanen;
+        foreach ($this->aliasFrekuensi as $alias => $kunci) {
+            $peta[$alias] = $this->frekuensiPanen[$kunci];
+        }
+        return $peta;
+    }
+
+    /**
      * Tampilkan halaman survei publik Produsen.
      */
     public function show(string $token): View
@@ -56,6 +100,7 @@ class PublicSurveiProdusenController extends Controller
             'bulans'         => $bulans,
             'saranKomoditas' => $this->saranKomoditas,
             'satuanList'     => $this->satuanList,
+            'frekuensiPanen' => $this->petaFrekuensi(),
         ]);
     }
 

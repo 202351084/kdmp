@@ -4,27 +4,41 @@ namespace App\Http\Controllers\Survei;
 
 use App\Http\Controllers\Controller;
 use App\Models\Survei\RtDesa;
+use App\Models\Survei\SesiSurvei;
 use App\Models\Tenant\Wilayah;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class RtDesaController extends Controller
 {
     public function index(Request $request)
     {
-        $query = RtDesa::with(['wilayah', 'sesi']);
-        
         $user = auth()->user();
-        if ($user->id_entitas && $user->entitas) {
-            $query->where('id_wilayah', $user->entitas->id_wilayah);
-            $sesis = \App\Models\Survei\SesiSurvei::where('id_wilayah', $user->entitas->id_wilayah)->orderBy('id', 'desc')->get();
-        } else {
-            $sesis = \App\Models\Survei\SesiSurvei::orderBy('id', 'desc')->get();
+        $idWilayah = ($user->id_entitas && $user->entitas) ? $user->entitas->id_wilayah : null;
+
+        // Bersihkan data duplikat jika ada, pertahankan 1 record master per RT
+        $duplicates = RtDesa::select('id_wilayah', 'nama_rt', 'rw', 'dusun', DB::raw('COUNT(*) as total'), DB::raw('MAX(id) as keep_id'))
+            ->groupBy('id_wilayah', 'nama_rt', 'rw', 'dusun')
+            ->having('total', '>', 1)
+            ->get();
+
+        foreach ($duplicates as $dup) {
+            RtDesa::where('id_wilayah', $dup->id_wilayah)
+                ->where('nama_rt', $dup->nama_rt)
+                ->where('rw', $dup->rw)
+                ->where('dusun', $dup->dusun)
+                ->where('id', '!=', $dup->keep_id)
+                ->delete();
         }
-        
-        $selectedSesi = null;
-        if ($request->has('id_sesi') && $request->id_sesi != '') {
-            $query->where('id_sesi', $request->id_sesi);
-            $selectedSesi = $sesis->where('id', $request->id_sesi)->first();
+
+        $query = RtDesa::with('wilayah');
+
+        if ($idWilayah) {
+            $query->where('id_wilayah', $idWilayah);
+            $activeSesi = SesiSurvei::where('id_wilayah', $idWilayah)->latest('id')->first();
+        } else {
+            $activeSesi = SesiSurvei::latest('id')->first();
         }
 
         if ($request->has('search') && $request->search != '') {
@@ -39,42 +53,43 @@ class RtDesaController extends Controller
         $totalKk = (clone $query)->sum('total_kk_baseline');
         $totalJiwa = (clone $query)->sum('total_jiwa_baseline');
 
-        $rts = $query->latest()->paginate(10);
-        return view('survei.rt.index', compact('rts', 'sesis', 'selectedSesi', 'totalKk', 'totalJiwa'));
+        $rts = $query->orderBy('dusun')->orderBy('nama_rt')->paginate(15)->withQueryString();
+
+        return view('survei.rt.index', compact('rts', 'totalKk', 'totalJiwa', 'activeSesi'));
     }
 
     public function create()
     {
         $user = auth()->user();
         if ($user->id_entitas && $user->entitas) {
-            $wilayahs = \App\Models\Tenant\Wilayah::where('id', $user->entitas->id_wilayah)->get();
-            $sesis = \App\Models\Survei\SesiSurvei::where('id_wilayah', $user->entitas->id_wilayah)->orderBy('id', 'desc')->get();
+            $wilayahs = Wilayah::where('id', $user->entitas->id_wilayah)->get();
         } else {
-            $wilayahs = \App\Models\Tenant\Wilayah::where('tingkat', 'Desa')->get();
-            $sesis = \App\Models\Survei\SesiSurvei::orderBy('id', 'desc')->get();
+            $wilayahs = Wilayah::where('tingkat', 'Desa')->get();
         }
-        return view('survei.rt.create', compact('wilayahs', 'sesis'));
+        return view('survei.rt.create', compact('wilayahs'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'id_wilayah' => 'required|exists:wilayah,id',
-            'id_sesi' => 'required|exists:sesi_survei,id',
             'dusun' => 'nullable|string|max:255',
             'rw' => 'nullable|string|max:5',
             'nama_rt' => [
                 'required', 
                 'string', 
                 'max:255',
-                \Illuminate\Validation\Rule::unique('rt_desas')->where('id_wilayah', $request->id_wilayah)->where('dusun', $request->dusun)->where('id_sesi', $request->id_sesi)
+                Rule::unique('rt_desas')
+                    ->where('id_wilayah', $request->id_wilayah)
+                    ->where('dusun', $request->dusun)
+                    ->where('rw', $request->rw)
             ],
             'nama_ketua_rt' => 'nullable|string|max:255',
             'no_hp' => 'nullable|string|max:20',
             'total_kk_baseline' => 'nullable|integer|min:0',
             'total_jiwa_baseline' => 'nullable|integer|min:0',
         ], [
-            'nama_rt.unique' => 'Nama RT ini sudah ada. Jika ini RT yang berbeda, harap isi nama Dusun/Dukuh untuk membedakannya.'
+            'nama_rt.unique' => 'Nama RT ini sudah ada di desa/dusun ini.'
         ]);
 
         // Auto format RT/RW (e.g., "rt 5" -> "RT 05", "5" -> "05")
@@ -90,48 +105,44 @@ class RtDesaController extends Controller
         $validated['nama_rt'] = $formatNumber($validated['nama_rt'], 'RT');
         $validated['rw'] = $formatNumber($validated['rw'], 'RW');
 
-        $rt = RtDesa::create($validated);
+        RtDesa::create($validated);
 
-        // Auto-update status sesi 1 menjadi sedang diisi jika belum
-        if ($rt->sesi && in_array($rt->sesi->status_sesi1, ['belum_diisi', null])) {
-            $rt->sesi->update(['status_sesi1' => 'sedang_diisi']);
-        }
-
-        return redirect()->route('survei.rt.index')->with('success', 'Data RT berhasil ditambahkan.');
+        return redirect()->route('survei.rt.index')->with('success', 'Data RT berhasil ditambahkan ke Master Data Desa.');
     }
 
     public function edit(RtDesa $rt)
     {
         $user = auth()->user();
         if ($user->id_entitas && $user->entitas) {
-            $wilayahs = \App\Models\Tenant\Wilayah::where('id', $user->entitas->id_wilayah)->get();
-            $sesis = \App\Models\Survei\SesiSurvei::where('id_wilayah', $user->entitas->id_wilayah)->orderBy('id', 'desc')->get();
+            $wilayahs = Wilayah::where('id', $user->entitas->id_wilayah)->get();
         } else {
-            $wilayahs = \App\Models\Tenant\Wilayah::where('tingkat', 'Desa')->get();
-            $sesis = \App\Models\Survei\SesiSurvei::orderBy('id', 'desc')->get();
+            $wilayahs = Wilayah::where('tingkat', 'Desa')->get();
         }
-        return view('survei.rt.edit', compact('rt', 'wilayahs', 'sesis'));
+        return view('survei.rt.edit', compact('rt', 'wilayahs'));
     }
 
     public function update(Request $request, RtDesa $rt)
     {
         $validated = $request->validate([
             'id_wilayah' => 'required|exists:wilayah,id',
-            'id_sesi' => 'required|exists:sesi_survei,id',
             'dusun' => 'nullable|string|max:255',
             'rw' => 'nullable|string|max:5',
             'nama_rt' => [
                 'required',
                 'string',
                 'max:255',
-                \Illuminate\Validation\Rule::unique('rt_desas')->where('id_wilayah', $request->id_wilayah)->where('dusun', $request->dusun)->where('id_sesi', $request->id_sesi)->ignore($rt->id)
+                Rule::unique('rt_desas')
+                    ->where('id_wilayah', $request->id_wilayah)
+                    ->where('dusun', $request->dusun)
+                    ->where('rw', $request->rw)
+                    ->ignore($rt->id)
             ],
             'nama_ketua_rt' => 'nullable|string|max:255',
             'no_hp' => 'nullable|string|max:20',
             'total_kk_baseline' => 'nullable|integer|min:0',
             'total_jiwa_baseline' => 'nullable|integer|min:0',
         ], [
-            'nama_rt.unique' => 'Nama RT ini sudah ada. Jika ini RT yang berbeda, harap isi nama Dusun/Dukuh untuk membedakannya.'
+            'nama_rt.unique' => 'Nama RT ini sudah ada di desa/dusun ini.'
         ]);
 
         // Auto format RT/RW
@@ -155,6 +166,6 @@ class RtDesaController extends Controller
     public function destroy(RtDesa $rt)
     {
         $rt->delete();
-        return redirect()->route('survei.rt.index')->with('success', 'Data RT berhasil dihapus.');
+        return redirect()->route('survei.rt.index')->with('success', 'Data RT berhasil dihapus dari Master Data.');
     }
 }

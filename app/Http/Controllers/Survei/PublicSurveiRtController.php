@@ -25,8 +25,8 @@ class PublicSurveiRtController extends Controller
             abort(403, "Tautan survei ini sudah kedaluwarsa. Survei ini ditutup karena hanya berlaku untuk periode bulan " . $sesi->bulan . " tahun " . $sesi->tahun . ".");
         }
 
-        // Ambil daftar RT yang terdaftar untuk sesi ini
-        $rts = RtDesa::where('id_sesi', $sesi->id)
+        // Ambil daftar RT master yang terdaftar di desa ini
+        $rts = RtDesa::where('id_wilayah', $sesi->id_wilayah)
             ->orderBy('dusun')
             ->orderBy('nama_rt')
             ->get();
@@ -75,11 +75,9 @@ class PublicSurveiRtController extends Controller
         $rw = $formatNumber($validated['rw'], 'RW');
 
         $validated['id_wilayah'] = $sesi->id_wilayah;
-        $validated['id_sesi']    = $sesi->id;
 
         RtDesa::updateOrCreate(
             [
-                'id_sesi'    => $sesi->id,
                 'id_wilayah' => $sesi->id_wilayah,
                 'nama_rt'    => $nama_rt,
                 'rw'         => $rw,
@@ -94,7 +92,7 @@ class PublicSurveiRtController extends Controller
             ]
         );
 
-        return redirect()->back()->with('success', 'Data RT berhasil disimpan! Terima kasih atas partisipasi Anda.');
+        return redirect()->back()->with('success', 'Data RT berhasil disimpan ke Master Data Desa! Terima kasih atas partisipasi Anda.');
     }
 
     /**
@@ -108,7 +106,7 @@ class PublicSurveiRtController extends Controller
             abort(403, "Tautan survei ini sudah kedaluwarsa.");
         }
 
-        $rt = RtDesa::where('id', $id)->where('id_sesi', $sesi->id)->firstOrFail();
+        $rt = RtDesa::where('id', $id)->where('id_wilayah', $sesi->id_wilayah)->firstOrFail();
 
         $validated = $request->validate([
             'nama_ketua_rt'       => 'nullable|string|max:100',

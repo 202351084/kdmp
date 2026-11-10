@@ -1,7 +1,7 @@
-<x-layouts.app title="Data RT" eyebrow="Manajemen Survei">
+<x-layouts.app title="Data RT" eyebrow="Master Data Desa">
     <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <p class="text-sm text-ink-500">Kelola daftar RT untuk kebutuhan data baseline kependudukan desa.</p>
+            <p class="text-sm text-ink-500">Kelola master data RT desa sebagai baseline kependudukan resmi yang berlaku di semua periode survei.</p>
         </div>
 
         <div class="flex items-center gap-3">
@@ -22,17 +22,17 @@
         </div>
     </div>
 
-    <form action="{{ route('survei.rt.index') }}" method="GET" class="flex flex-wrap items-center gap-2 mb-6">
-        <select name="id_sesi" onchange="this.form.submit()" class="rounded-sm border-paper-300 py-2 pl-3 pr-10 text-sm shadow-sm focus:border-merah-500 focus:outline-none focus:ring-1 focus:ring-merah-500 min-w-[200px]">
-            <option value="">-- Semua Sesi/Periode --</option>
-            @foreach($sesis as $sesi)
-                <option value="{{ $sesi->id }}" {{ request('id_sesi') == $sesi->id ? 'selected' : '' }}>
-                    Periode {{ $sesi->bulan }}/{{ $sesi->tahun }} - {{ $sesi->wilayah->nama ?? '' }}
-                </option>
-            @endforeach
-        </select>
+    @if(session('success'))
+        <div class="mb-6 flex items-start gap-3 rounded-sm border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>{{ session('success') }}</span>
+        </div>
+    @endif
 
-        <div class="relative flex-1 min-w-[200px]">
+    <form action="{{ route('survei.rt.index') }}" method="GET" class="flex flex-wrap items-center gap-2 mb-6">
+        <div class="relative flex-1 min-w-[240px]">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <svg class="h-4 w-4 text-ink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -40,14 +40,14 @@
             </div>
             <input type="text" name="search" value="{{ request('search') }}"
                    class="block w-full rounded-sm border-paper-300 py-2 pl-10 pr-3 text-sm placeholder-ink-400 shadow-sm focus:border-merah-500 focus:outline-none focus:ring-1 focus:ring-merah-500"
-                   placeholder="Cari berdasarkan no RT, dusun, atau ketua RT...">
+                   placeholder="Cari berdasarkan no RT, RW, dusun, atau nama ketua RT...">
         </div>
         
         <button type="submit"
                 class="rounded-sm bg-merah-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-merah-600">
             Cari
         </button>
-        @if(request('search') || request('id_sesi'))
+        @if(request('search'))
             <a href="{{ route('survei.rt.index') }}"
                class="rounded-sm border border-paper-300 bg-white px-4 py-2 text-sm font-semibold text-ink-700 shadow-sm hover:bg-paper-100">
                 Reset
@@ -55,17 +55,17 @@
         @endif
     </form>
 
-    @if(isset($selectedSesi) && $selectedSesi && $selectedSesi->token_rt)
+    @if(isset($activeSesi) && $activeSesi && $activeSesi->token_rt)
         <div class="mb-6 rounded-sm border border-blue-200 bg-blue-50 p-5 flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
-                <h2 class="font-display text-base font-semibold mb-1 text-blue-800">Tautan Survei RT (Periode {{ $selectedSesi->bulan }}/{{ $selectedSesi->tahun }})</h2>
-                <p class="text-xs text-blue-700">Bagikan tautan ini khusus untuk pengurus RT di {{ $selectedSesi->wilayah->nama ?? 'Desa ini' }} untuk pengisian data baseline keluarga.</p>
+                <h2 class="font-display text-base font-semibold mb-1 text-blue-800">Tautan Pengisian Survei RT (Baseline)</h2>
+                <p class="text-xs text-blue-700">Bagikan tautan ini ke Pengurus RT untuk memverifikasi atau memperbarui data jumlah KK dan jiwa baseline di wilayah masing-masing.</p>
             </div>
             <div class="flex gap-2 items-center w-full md:w-auto">
                 <div class="flex-1 md:flex-none rounded-sm border border-blue-300 bg-white p-2.5 font-mono text-xs break-all text-ink-800 w-full md:w-64 truncate">
-                    {{ url('/survei/isi/rt/' . $selectedSesi->token_rt) }}
+                    {{ url('/survei/isi/rt/' . $activeSesi->token_rt) }}
                 </div>
-                <button type="button" onclick="copyAndShowModal('{{ url('/survei/isi/rt/' . $selectedSesi->token_rt) }}')" class="rounded-sm bg-blue-600 px-4 py-2.5 text-xs font-medium text-white hover:bg-blue-700 shadow-sm shrink-0 whitespace-nowrap">
+                <button type="button" onclick="copyAndShowModal('{{ url('/survei/isi/rt/' . $activeSesi->token_rt) }}')" class="rounded-sm bg-blue-600 px-4 py-2.5 text-xs font-medium text-white hover:bg-blue-700 shadow-sm shrink-0 whitespace-nowrap">
                     Salin Tautan
                 </button>
             </div>
@@ -79,7 +79,7 @@
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
             </div>
             <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">Total KK</p>
+                <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">Total KK Baseline</p>
                 <p class="font-display text-2xl font-bold text-ink-900">{{ number_format($totalKk ?? 0, 0, ',', '.') }}</p>
             </div>
         </div>
@@ -88,7 +88,7 @@
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
             </div>
             <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">Total Jiwa</p>
+                <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">Total Jiwa Baseline</p>
                 <p class="font-display text-2xl font-bold text-ink-900">{{ number_format($totalJiwa ?? 0, 0, ',', '.') }}</p>
             </div>
         </div>
@@ -102,6 +102,7 @@
                         <th class="px-6 py-4 font-medium">No</th>
                         <th class="px-6 py-4 font-medium">Desa / Wilayah</th>
                         <th class="px-6 py-4 font-medium">No RT / RW</th>
+                        <th class="px-6 py-4 font-medium">Dusun / Dukuh</th>
                         <th class="px-6 py-4 font-medium">Ketua RT</th>
                         <th class="px-6 py-4 font-medium text-right">KK</th>
                         <th class="px-6 py-4 font-medium text-right">Jiwa</th>
@@ -114,18 +115,18 @@
                             <td class="px-6 py-4">{{ $rts->firstItem() + $index }}</td>
                             <td class="px-6 py-4">
                                 <div class="font-medium text-ink-900">{{ $rt->wilayah->nama ?? '-' }}</div>
-                                <div class="text-xs text-ink-500">{{ $rt->sesi ? $rt->sesi->bulan . '/' . $rt->sesi->tahun : '-' }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="font-medium text-ink-900">
-                                    {{ $rt->nama_rt }} @if($rt->rw) / {{ $rt->rw }} @endif
-                                </div>
-                                @if($rt->dusun)
-                                    <span class="text-xs text-ink-400">({{ $rt->dusun }})</span>
+                                <span class="font-semibold text-ink-900">{{ $rt->nama_rt }}</span>
+                                @if($rt->rw)
+                                    <span class="text-xs text-ink-600">/ {{ $rt->rw }}</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4">
-                                <div>{{ $rt->nama_ketua_rt ?? '-' }}</div>
+                                {{ $rt->dusun ?: '-' }}
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-ink-900">{{ $rt->nama_ketua_rt ?? '-' }}</div>
                                 @if($rt->no_hp)
                                     @php
                                         $wa = preg_replace('/[^0-9]/', '', $rt->no_hp);
@@ -137,22 +138,19 @@
                                     </a>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-right">{{ $rt->total_kk_baseline }}</td>
-                            <td class="px-6 py-4 text-right">{{ $rt->total_jiwa_baseline }}</td>
+                            <td class="px-6 py-4 text-right font-medium text-ink-900">{{ $rt->total_kk_baseline }}</td>
+                            <td class="px-6 py-4 text-right font-medium text-ink-900">{{ $rt->total_jiwa_baseline }}</td>
                             <td class="px-6 py-4 text-center">
-                                <div class="flex justify-center gap-2">
-                                    <a href="{{ route('survei.rt.edit', $rt->id) }}" class="rounded-sm bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100">Edit</a>
-                                    <form action="{{ route('survei.rt.destroy', $rt->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus data ini?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="rounded-sm bg-merah-50 px-2 py-1 text-xs font-semibold text-merah-600 hover:bg-merah-100">Hapus</button>
-                                    </form>
-                                </div>
+                                <form action="{{ route('survei.rt.destroy', $rt->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus data RT ini dari Master Data Desa?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="rounded-sm bg-merah-50 px-2.5 py-1 text-xs font-semibold text-merah-600 hover:bg-merah-100">Hapus</button>
+                                </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-8 text-center text-ink-500">Belum ada data RT.</td>
+                            <td colspan="8" class="px-6 py-8 text-center text-ink-500">Belum ada data RT di Master Data Desa. Klik "Tambah RT Baru" untuk mendaftarkan RT pertama.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -172,7 +170,7 @@
                 <svg class="h-6 w-6 text-sawah-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             </div>
             <h3 class="mb-2 font-display text-lg font-semibold text-ink-900">Berhasil Disalin!</h3>
-            <p class="mb-6 text-sm text-ink-600">Tautan pengisian survei telah disalin ke clipboard Anda. Silakan bagikan ke Ketua RT yang bersangkutan.</p>
+            <p class="mb-6 text-sm text-ink-600">Tautan pengisian survei telah disalin ke clipboard Anda. Silakan bagikan ke Pengurus RT yang bersangkutan.</p>
             <button type="button" onclick="closeSuccessModal()" class="w-full rounded-sm bg-merah-500 px-4 py-2 text-sm font-medium text-white hover:bg-merah-600">Tutup</button>
         </div>
     </div>

@@ -33,7 +33,7 @@
 
 <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
     <div class="stepper mt-4">
-        <div class="step-item done">✓ Lokasi</div>
+        <div class="step-item done">✓ Data Diri</div>
         <div class="step-item done">✓ Anggota Keluarga</div>
         <div class="step-item done">✓ Konsumsi</div>
         <div class="step-item active">📋 Review Final</div>
@@ -47,12 +47,12 @@
         <p class="text-blue-100 mb-0 relative z-10">Silakan tinjau kembali data yang telah Anda masukkan. Jika sudah sesuai, klik tombol Kirim di bawah.</p>
     </div>
 
-    <!-- Panel 1: Data Diri & Lokasi -->
+    <!-- Panel 1: Data Diri & Alamat -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4 pb-4 border-b border-slate-100">
             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                Data Keluarga & Lokasi
+                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                Data Responden & Alamat
             </h2>
             <a href="{{ route('survei.public.masyarakat.show', ['token' => $token, 'id_masyarakat' => $masyarakat->id, 'redirect' => 'review']) }}" class="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -70,6 +70,14 @@
                 <p class="font-bold text-slate-800">{{ $masyarakat->umur ?? '-' }} Tahun / {{ $masyarakat->jenis_kelamin ?? '-' }}</p>
             </div>
             <div>
+                <p class="text-slate-500 font-medium">RT / RW</p>
+                <p class="font-bold text-slate-800">{{ $masyarakat->rt }} / {{ $masyarakat->rw }}</p>
+            </div>
+            <div>
+                <p class="text-slate-500 font-medium">No. Telepon / WA</p>
+                <p class="font-bold text-slate-800">{{ $masyarakat->nomor_hp ?? 'Tidak ada' }}</p>
+            </div>
+            <div class="sm:col-span-2">
                 <p class="text-slate-500 font-medium">Alamat Lengkap</p>
                 <p class="font-bold text-slate-800">
                     {{ $masyarakat->nama_jalan ? $masyarakat->nama_jalan . ', ' : '' }}
@@ -80,18 +88,6 @@
                         <br><span class="text-xs font-normal text-slate-500">({{ $masyarakat->detail_alamat }})</span>
                     @endif
                 </p>
-            </div>
-            <div>
-                <p class="text-slate-500 font-medium">RT / RW</p>
-                <p class="font-bold text-slate-800">{{ $masyarakat->rt }} / {{ $masyarakat->rw }}</p>
-            </div>
-            <div>
-                <p class="text-slate-500 font-medium">No. Telepon / WA</p>
-                <p class="font-bold text-slate-800">{{ $masyarakat->nomor_hp ?? 'Tidak ada' }}</p>
-            </div>
-            <div>
-                <p class="text-slate-500 font-medium">Titik Lokasi</p>
-                <p class="font-bold text-slate-800">{{ $masyarakat->latitude }}, {{ $masyarakat->longitude }}</p>
             </div>
         </div>
     </div>

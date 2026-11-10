@@ -850,9 +850,7 @@ function submitSurvei() {
         rw: document.getElementById('rw').value.trim(),
         nama_jalan: document.getElementById('nama_jalan').value.trim(),
         nomor_rumah: document.getElementById('nomor_rumah').value.trim(),
-        detail_alamat: document.getElementById('detail_alamat').value.trim(),
-        latitude: null,
-        longitude: null
+        detail_alamat: document.getElementById('detail_alamat').value.trim()
     };
 
     fetch(window.APP_SUBMIT_URL, {

@@ -123,8 +123,6 @@ class PublicSurveiMasyarakatController extends Controller
             'nama_jalan' => 'nullable|string|max:255',
             'nomor_rumah' => 'nullable|string|max:50',
             'detail_alamat' => 'nullable|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
         ]);
 
         // Resolusi desa target berdasarkan input desa dari masyarakat
@@ -167,8 +165,6 @@ class PublicSurveiMasyarakatController extends Controller
             'nama_jalan' => $validated['nama_jalan'] ?? null,
             'nomor_rumah' => $validated['nomor_rumah'] ?? null,
             'detail_alamat' => $validated['detail_alamat'] ?? null,
-            'latitude' => $validated['latitude'] ?? null,
-            'longitude' => $validated['longitude'] ?? null,
         ];
 
         if ($request->has('id_masyarakat')) {

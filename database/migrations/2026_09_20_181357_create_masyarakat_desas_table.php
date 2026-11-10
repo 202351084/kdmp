@@ -34,10 +34,6 @@ return new class extends Migration
             $table->string('nomor_rumah')->nullable();
             $table->text('detail_alamat')->nullable();
             
-            // Koordinat (opsional, karena pengguna bisa lanjut tanpa lokasi)
-            $table->decimal('latitude', 10, 8)->nullable();
-            $table->decimal('longitude', 11, 8)->nullable();
-            
             $table->timestamps();
         });
     }

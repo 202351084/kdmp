@@ -1,0 +1,287 @@
+Benar. Saya salah memahami konsep Master dan cara menghitung frekuensi. Saya ulang dengan aturan yang benar:
+
+1\. Master hanya nama kelompok komoditas, satu kata jika memang cukup. Kata penjelas seperti jenis daging, ikan, atau telur harus menjadi bagian dari nama Item, bukan ditambahkan ke Master.
+
+Contohnya:
+
+| Kategori               | Master | Item               |
+| ---------------------- | ------ | ------------------ |
+| Peternakan             | Daging | Daging sapi        |
+| Peternakan             | Daging | Daging kambing     |
+| Peternakan             | Daging | Daging domba       |
+| Peternakan             | Telur  | Telur ayam ras     |
+| Peternakan             | Telur  | Telur ayam kampung |
+| Peternakan             | Susu   | Susu sapi          |
+| Perikanan dan Kelautan | Ikan   | Ikan lele          |
+| Perikanan dan Kelautan | Ikan   | Ikan nila          |
+| Perikanan dan Kelautan | Ikan   | Ikan tongkol       |
+| Perikanan dan Kelautan | Udang  | Udang vaname       |
+
+Jadi, Master = Daging, bukan “Daging Sapi”; Item = Daging sapi, bukan “Sapi potong”.
+
+2\. Frekuensi dihitung dari satu siklus produksi lengkap, mulai tanam atau pemeliharaan sampai panen.
+
+\\[ \text{Frekuensi teoritis per tahun} = \frac{365\text{ hari}}{\text{durasi satu siklus sampai panen}} \\]
+
+Contoh jika satu siklus padi membutuhkan 150–210 hari:
+
+\\[ 365 \div 210 = 1{,}74 \qquad 365 \div 150 = 2{,}43 \\]
+
+Artinya, secara teoritis sekitar 1–2 kali panen dalam setahun jika dibulatkan ke jumlah siklus lengkap yang dapat diselesaikan. Angka ini tetap perlu mempertimbangkan jeda tanam dan kondisi budidaya.
+
+3\. Aturan lainnya: babi dan produk turunannya tidak boleh ada; komoditas haram tidak boleh ada; angka durasi harus memiliki sumber; dan saya tidak akan mengganti durasi siklus lengkap dengan umur panen pertama.
+
+## 1. Kategori Pertanian
+
+Untuk pertanian, Master dikelompokkan berdasarkan kelompok tanaman, sedangkan Item merupakan nama komoditas lengkap. Frekuensi dihitung dari lama satu siklus sejak penanaman sampai panen, bukan dari berapa kali pemetikan dalam satu masa tanam.
+
+### 1.1 Tanaman pangan dan palawija
+
+| No. | Kategori  | Master   | Item           | Frekuensi Aktual per Tahun     | Estimasi Siklus per Tahun | Durasi Tanam sampai Panen                        | Periode Produksi       | Dasar Perhitungan                                       | Sumber          |
+| --- | --------- | -------- | -------------- | ------------------------------ | ------------------------- | ------------------------------------------------ | ---------------------- | ------------------------------------------------------- | --------------- |
+| 1   | Pertanian | Padi     | Padi sawah     | Data frekuensi belum ditemukan | ±2 siklus                 | 135–145 hari                                     | Mengikuti musim tanam  | 365 ÷ 135–145; secara teoritis sekitar 2 siklus lengkap | Kementan        |
+| 2   | Pertanian | Palawija | Jagung pipilan | Data frekuensi belum ditemukan | ±3–4 siklus               | 80–103 hari                                      | Mengikuti musim tanam  | 365 ÷ 80–103                                            | BRMP            |
+| 3   | Pertanian | Palawija | Kedelai        | Data frekuensi belum ditemukan | ±4–5 siklus               | 70–90 hari                                       | Mengikuti musim tanam  | 365 ÷ 70–90                                             | Kementan        |
+| 4   | Pertanian | Palawija | Kacang tanah   | Data frekuensi belum ditemukan | ±3–4 siklus               | 90–105 hari                                      | Mengikuti musim tanam  | 365 ÷ 90–105                                            | BRMP            |
+| 5   | Pertanian | Palawija | Singkong       | Data frekuensi belum ditemukan | Belum dihitung            | Durasi panen sesuai varietas belum terverifikasi | Mengikuti umur tanaman | Belum tersedia acuan siklus yang cukup                  | Belum ditemukan |
+| 6   | Pertanian | Palawija | Ubi jalar      | Data frekuensi belum ditemukan | Belum dihitung            | Durasi panen belum terverifikasi                 | Mengikuti musim tanam  | Belum tersedia acuan siklus yang cukup                  | Belum ditemukan |
+
+Acuan teknis menunjukkan padi sekitar 135–145 hari, jagung 80–103 hari, kedelai 70–90 hari, dan kacang tanah 90–105 hari sampai panen. Angka frekuensinya merupakan hasil perhitungan teoritis, bukan catatan realisasi petani Pati.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://pustaka.bppsdmp.pertanian.go.id\&sz=32)
+
+pustaka.bppsdmp.pertanian.go.id+4
+
+
+
+### 1.2 Sayuran dan hortikultura semusim
+
+| No. | Kategori  | Master  | Item           | Frekuensi Aktual per Tahun     | Estimasi Siklus per Tahun  | Durasi Tanam sampai Panen                             | Periode Produksi                            | Dasar Perhitungan                                                    | Sumber                    |
+| --- | --------- | ------- | -------------- | ------------------------------ | -------------------------- | ----------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------- | ------------------------- |
+| 7   | Pertanian | Sayuran | Bawang merah   | Data frekuensi belum ditemukan | ±3–5 siklus                | 65–100 hari, bergantung lokasi dan tujuan panen       | Musiman                                     | 365 ÷ 65–100                                                         | BRMP                      |
+| 8   | Pertanian | Sayuran | Bayam          | Data frekuensi belum ditemukan | ±9–12 siklus               | 25–40 hari                                            | Dapat ditanam berulang                      | 365 ÷ 25–40                                                          | Ditjen Hortikultura; BRMP |
+| 9   | Pertanian | Sayuran | Cabai rawit    | Data frekuensi belum ditemukan | ±3–4 siklus teoritis       | 75–120 hari menuju panen                              | Mengikuti musim tanam                       | 365 ÷ 75–120; angka bergantung varietas dan acuan panen              | Kementan                  |
+| 10  | Pertanian | Sayuran | Cabai besar    | Data frekuensi belum ditemukan | Belum dihitung             | Durasi siklus lengkap belum dipastikan                | Mengikuti musim tanam                       | Umur panen pertama tidak otomatis menjadi durasi satu siklus         | Belum ditemukan           |
+| 11  | Pertanian | Sayuran | Cabai keriting | Data frekuensi belum ditemukan | Belum dihitung             | Durasi siklus lengkap belum dipastikan                | Mengikuti musim tanam                       | Umur panen pertama tidak otomatis menjadi durasi satu siklus         | Belum ditemukan           |
+| 12  | Pertanian | Sayuran | Kacang panjang | Data frekuensi belum ditemukan | Belum dihitung             | ±45–50 hari menuju panen pertama                      | Panen berulang dalam satu masa tanam        | Perlu durasi produktif total tanaman untuk menghitung siklus lengkap | Kemendikbud               |
+| 13  | Pertanian | Sayuran | Kangkung       | Data frekuensi belum ditemukan | ±8–12 siklus teoritis      | ±27–45 hari pada acuan budidaya cepat                 | Dapat ditanam berulang                      | 365 ÷ 27–45; tergantung metode budidaya                              | Ditjen Hortikultura; BBPP |
+| 14  | Pertanian | Sayuran | Mentimun       | Data frekuensi belum ditemukan | Belum dihitung             | Umur panen pertama sekitar 32 hari                    | Panen berulang dalam satu masa tanam        | Memerlukan durasi produktif total, bukan hanya panen pertama         | Kementan                  |
+| 15  | Pertanian | Buah    | Melon          | Data frekuensi belum ditemukan | Belum dihitung             | Durasi siklus spesifik belum ditemukan                | Mengikuti musim tanam                       | Belum tersedia acuan teknis yang digunakan                           | Belum ditemukan           |
+| 16  | Pertanian | Sayuran | Sawi           | Data frekuensi belum ditemukan | ±6 siklus teoritis         | ±60 hari                                              | Mengikuti musim tanam                       | 365 ÷ 60                                                             | BBPP Kupang               |
+| 17  | Pertanian | Buah    | Semangka       | Data frekuensi belum ditemukan | ±5–6 siklus teoritis       | 60–70 hari                                            | Mengikuti musim tanam                       | 365 ÷ 60–70                                                          | Kementan                  |
+| 18  | Pertanian | Sayuran | Terung         | Data frekuensi belum ditemukan | Belum dihitung             | Umur panen pertama berbeda menurut varietas dan acuan | Panen berulang dalam satu masa tanam        | Perlu durasi satu masa produksi lengkap                              | Belum ditemukan           |
+| 19  | Pertanian | Sayuran | Tomat          | Data frekuensi belum ditemukan | Belum dihitung             | 90–100 hari menuju panen pertama                      | Panen berulang dalam satu masa tanam        | Panen berikutnya masih bagian dari satu siklus tanaman               | Kementan                  |
+| 20  | Pertanian | Jamur   | Jamur tiram    | Data frekuensi belum ditemukan | ±3–4 batch media per tahun | Masa produktif baglog sekitar 3–4 bulan               | Panen berulang selama masa produktif baglog | 365 ÷ 90–120 hari; satu baglog dapat dipanen berkali-kali            | Kementan                  |
+| 21  | Pertanian | Jamur   | Jamur merang   | Data frekuensi belum ditemukan | Belum dihitung             | Durasi satu siklus budidaya belum terverifikasi       | Mengikuti siklus media tanam                | Tidak menggunakan acuan jamur tiram untuk jamur merang               | Belum ditemukan           |
+
+Catatan: angka bayam, kangkung, sawi, dan semangka dihitung dari acuan waktu tanam sampai panen. Untuk cabai, tomat, mentimun, dan kacang panjang, panen pertama dapat diikuti pemetikan berkali-kali. Karena itu, angka siklus tahunan belum ditetapkan jika sumber hanya memberikan umur panen pertama. Sumber teknis yang ditemukan menyebut semangka 60–70 hari, bayam sekitar 3–4 minggu, serta masa produktif baglog jamur tiram sekitar 3–4 bulan.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://hortikultura.pertanian.go.id\&sz=32)
+
+DIREKTORAT JENDERAL HORTIKULTURA+5
+
+
+
+### 1.3 Buah-buahan
+
+Untuk tanaman buah tahunan, durasi sejak penanaman sampai panen pertama dapat berlangsung lebih dari satu tahun. Setelah tanaman produktif, panen dapat berlangsung setiap musim atau berulang. Karena itu, frekuensi panen pohon produktif tidak boleh disamakan dengan frekuensi penanaman baru.
+
+| No. | Kategori  | Master | Item         | Frekuensi Aktual per Tahun                | Estimasi Siklus per Tahun                   | Durasi Tanam sampai Panen                            | Periode Produksi               | Dasar Perhitungan                                                                        | Sumber                        |
+| --- | --------- | ------ | ------------ | ----------------------------------------- | ------------------------------------------- | ---------------------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------- | ----------------------------- |
+| 22  | Pertanian | Buah   | Mangga       | Data frekuensi panen Pati belum ditemukan | Tidak dihitung sebagai siklus tanam tahunan | Beberapa tahun hingga produktif, bergantung varietas | Musiman                        | Tanaman tahunan; frekuensi panen pohon produktif memerlukan data musim panen             | BRMP                          |
+| 23  | Pertanian | Buah   | Pisang       | Data frekuensi panen Pati belum ditemukan | Belum dihitung                              | Bergantung jenis dan bahan tanam                     | Dapat tersedia sepanjang tahun | Memerlukan durasi dari penanaman sampai tandan pertama untuk varietas yang dibudidayakan | Belum ditemukan               |
+| 24  | Pertanian | Buah   | Jambu biji   | Data frekuensi panen Pati belum ditemukan | Belum dihitung                              | Bergantung varietas dan umur tanaman                 | Dapat berbuah berulang         | Memerlukan durasi tanaman sampai produktif dan pola panen                                | Belum ditemukan               |
+| 25  | Pertanian | Buah   | Rambutan     | Data frekuensi panen Pati belum ditemukan | Tidak dihitung sebagai siklus tanam tahunan | Tanaman tahunan                                      | Musiman                        | Pembungaan dipengaruhi kondisi lingkungan dan periode kering                             | BRMP                          |
+| 26  | Pertanian | Buah   | Jeruk pamelo | Data frekuensi panen Pati belum ditemukan | Belum dihitung                              | Bergantung umur tanaman dan varietas                 | Musiman                        | Memerlukan data umur mulai berbuah dan kalender panen lokal                              | Perbup Pati No. 56 Tahun 2025 |
+
+Tanaman mangga dan rambutan merupakan tanaman buah tahunan. BRMP menjelaskan bahwa pembungaan mangga dan rambutan dipengaruhi kondisi lingkungan, termasuk periode kering. Informasi tersebut tidak dapat langsung diubah menjadi jumlah siklus tanam per tahun.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://buahtropika.brmp.pertanian.go.id\&sz=32)
+
+Bagaimana Tanaman Buah Tropika Tahunan Berbuah?+1
+
+
+
+### 1.4 Tanaman perkebunan
+
+| No. | Kategori  | Master     | Item          | Frekuensi Aktual per Tahun                   | Estimasi Siklus per Tahun                   | Durasi Tanam sampai Panen                                           | Periode Produksi                    | Dasar Perhitungan                                         | Sumber          |
+| --- | --------- | ---------- | ------------- | -------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------- | --------------- |
+| 27  | Pertanian | Perkebunan | Kelapa        | Data frekuensi panen Pati belum ditemukan    | Tidak dihitung sebagai siklus tanam tahunan | Tanaman tahunan                                                     | Mengikuti kematangan buah           | Perlu jumlah periode panen pohon produktif                | Ditjenbun       |
+| 28  | Pertanian | Perkebunan | Kelapa kopyor | Data frekuensi panen Pati belum ditemukan    | Tidak dihitung sebagai siklus tanam tahunan | Tanaman tahunan                                                     | Mengikuti kematangan buah           | Memerlukan data panen kebun kopyor lokal                  | Perlu data Pati |
+| 29  | Pertanian | Perkebunan | Karet         | Data hari sadap efektif Pati belum ditemukan | Tidak berlaku sebagai siklus tanam          | Tanaman tahunan sampai memasuki masa sadap                          | Penyadapan berulang                 | Frekuensi harus dihitung berdasarkan hari sadap efektif   | Ditjenbun       |
+| 30  | Pertanian | Perkebunan | Kopi          | Data frekuensi panen Pati belum ditemukan    | Tidak dihitung sebagai siklus tanam tahunan | Tanaman tahunan sampai produktif                                    | Musiman                             | Memerlukan kalender panen kopi lokal                      | Ditjenbun       |
+| 31  | Pertanian | Perkebunan | Kakao         | Data frekuensi panen Pati belum ditemukan    | Tidak dihitung sebagai siklus tanam tahunan | Tanaman tahunan                                                     | Panen mengikuti kematangan buah     | Memerlukan periode panen pohon produktif                  | Ditjenbun       |
+| 32  | Pertanian | Perkebunan | Cengkeh       | Data frekuensi panen Pati belum ditemukan    | Tidak dihitung sebagai siklus tanam tahunan | Tanaman tahunan                                                     | Musiman                             | Memerlukan kalender panen bunga cengkeh                   | Ditjenbun       |
+| 33  | Pertanian | Perkebunan | Jambu mete    | Data frekuensi panen Pati belum ditemukan    | Tidak dihitung sebagai siklus tanam tahunan | Tanaman tahunan                                                     | Musiman                             | Memerlukan kalender panen lokal                           | Ditjenbun       |
+| 34  | Pertanian | Perkebunan | Tebu          | Data frekuensi panen Pati belum ditemukan    | Belum dihitung                              | Durasi siklus sesuai varietas dan sistem ratoon belum terverifikasi | Mengikuti kalender tanam dan tebang | Perlu membedakan tanaman baru dengan ratoon atau keprasan | Belum ditemukan |
+| 35  | Pertanian | Perkebunan | Tembakau      | Data frekuensi panen Pati belum ditemukan    | Belum dihitung                              | Durasi siklus lengkap belum terverifikasi                           | Musiman                             | Memerlukan durasi varietas dan kalender tanam Pati        | Belum ditemukan |
+
+Catatan: tanaman tahunan tidak otomatis menghasilkan satu siklus tanam setiap tahun. Untuk kelapa, karet, kopi, kakao, cengkeh, dan jambu mete, yang perlu dihitung adalah periode panen atau produksi dari tanaman yang telah produktif. Untuk tebu, perlu dibedakan siklus tanaman baru dan tanaman keprasan.
+
+## 2. Kategori Peternakan
+
+Pada kategori Peternakan, Master menggunakan kelompok hasil komoditas seperti Daging, Telur, dan Susu. Nama Item ditulis lengkap sesuai produk yang dihasilkan.
+
+### 2.1 Daging
+
+| No. | Kategori   | Master | Item           | Frekuensi Aktual per Tahun                 | Estimasi Siklus per Tahun | Durasi Pemeliharaan sampai Panen       | Periode Produksi | Dasar Perhitungan                                | Sumber                      |
+| --- | ---------- | ------ | -------------- | ------------------------------------------ | ------------------------- | -------------------------------------- | ---------------- | ------------------------------------------------ | --------------------------- |
+| 36  | Peternakan | Daging | Daging sapi    | Data frekuensi siklus Pati belum ditemukan | ±2–3 siklus teoritis      | 4–6 bulan untuk penggemukan            | Sepanjang tahun  | 365 ÷ 120–180 hari; khusus penggemukan           | Permentan No. 46 Tahun 2015 |
+| 37  | Peternakan | Daging | Daging kerbau  | Data frekuensi belum ditemukan             | Belum dihitung            | Durasi penggemukan belum terverifikasi | Sepanjang tahun  | Memerlukan acuan lama pemeliharaan kerbau        | Belum ditemukan             |
+| 38  | Peternakan | Daging | Daging kambing | Data frekuensi belum ditemukan             | Belum dihitung            | Bergantung umur dan sistem penggemukan | Sepanjang tahun  | Memerlukan durasi pemeliharaan sampai bobot jual | Belum ditemukan             |
+| 39  | Peternakan | Daging | Daging domba   | Data frekuensi belum ditemukan             | Belum dihitung            | Bergantung umur dan sistem penggemukan | Sepanjang tahun  | Memerlukan durasi pemeliharaan sampai bobot jual | Belum ditemukan             |
+
+Acuan penggemukan sapi 4–6 bulan menghasilkan sekitar 2–3 siklus teoritis dalam setahun. Perhitungan tersebut hanya berlaku untuk kegiatan penggemukan, bukan keseluruhan proses pembibitan sampai ternak siap potong.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://ditjenpkh.pertanian.go.id\&sz=32)
+
+ditjenpkh.pertanian.go.id+1
+
+
+
+### 2.2 Telur
+
+| No. | Kategori   | Master | Item               | Frekuensi Aktual per Tahun                                                              | Estimasi Siklus per Tahun                      | Durasi Produksi                                  | Periode Produksi               | Dasar Perhitungan                                                      | Sumber          |
+| --- | ---------- | ------ | ------------------ | --------------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- | --------------- |
+| 40  | Peternakan | Telur  | Telur ayam ras     | Aktual Pati belum ditemukan; acuan teknis 300–330 butir/ekor/tahun                      | Tidak berlaku sebagai siklus bertelur          | Masa produktif ayam petelur                      | Produksi harian saat produktif | Menggunakan jumlah butir per ekor per tahun, bukan siklus pemeliharaan | Kementan        |
+| 41  | Peternakan | Telur  | Telur ayam kampung | Aktual Pati belum ditemukan; acuan 47–146 butir/induk/tahun menurut sistem pemeliharaan | 3–7 periode bertelur pada sistem yang diteliti | Bergantung sistem pemeliharaan                   | Sepanjang tahun                | Frekuensi periode bertelur berbeda menurut sistem pemeliharaan         | Kementan        |
+| 42  | Peternakan | Telur  | Telur itik         | Data frekuensi belum ditemukan                                                          | Belum dihitung                                 | Masa produktif bergantung jenis dan pemeliharaan | Produksi harian atau periodik  | Memerlukan data produksi telur per ekor per tahun                      | Belum ditemukan |
+| 43  | Peternakan | Telur  | Telur puyuh        | Data frekuensi belum ditemukan                                                          | Belum dihitung                                 | Masa produktif bergantung jenis dan pemeliharaan | Produksi harian saat produktif | Memerlukan data produksi telur per ekor per tahun                      | Belum ditemukan |
+
+### 2.3 Susu
+
+| No. | Kategori   | Master | Item      | Frekuensi Aktual per Tahun                                   | Estimasi Siklus per Tahun           | Durasi Produksi                                    | Periode Produksi    | Dasar Perhitungan                                                                             | Sumber                      |
+| --- | ---------- | ------ | --------- | ------------------------------------------------------------ | ----------------------------------- | -------------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------- | --------------------------- |
+| 44  | Peternakan | Susu   | Susu sapi | Aktual Pati belum ditemukan; acuan pemerahan 1–2 kali sehari | Tidak dihitung sebagai siklus panen | Masa laktasi sekitar 305 hari sebagai acuan teknis | Selama masa laktasi | Produksi susu diukur melalui frekuensi pemerahan dan volume susu, bukan jumlah siklus tahunan | Referensi teknis peternakan |
+
+### 2.4 Daging unggas
+
+| No. | Kategori   | Master | Item                | Frekuensi Aktual per Tahun                 | Estimasi Siklus per Tahun | Durasi Pemeliharaan sampai Panen                     | Periode Produksi | Dasar Perhitungan                                             | Sumber                           |
+| --- | ---------- | ------ | ------------------- | ------------------------------------------ | ------------------------- | ---------------------------------------------------- | ---------------- | ------------------------------------------------------------- | -------------------------------- |
+| 45  | Peternakan | Daging | Daging ayam broiler | Data frekuensi aktual Pati belum ditemukan | ±8–10 siklus teoritis     | 35–42 hari                                           | Sepanjang tahun  | 365 ÷ 35–42 hari; belum memperhitungkan jeda sanitasi kandang | Dinas Peternakan Kabupaten Lebak |
+| 46  | Peternakan | Daging | Daging ayam kampung | Data frekuensi aktual Pati belum ditemukan | Belum dihitung            | Bergantung umur panen dan sistem pemeliharaan        | Sepanjang tahun  | Tidak menggunakan durasi broiler sebagai pengganti            | Belum ditemukan                  |
+| 47  | Peternakan | Daging | Daging itik         | Data frekuensi aktual Pati belum ditemukan | Belum dihitung            | Durasi pemeliharaan sampai panen belum terverifikasi | Sepanjang tahun  | Memerlukan acuan umur panen itik pedaging                     | Belum ditemukan                  |
+
+Acuan teknis broiler 35–42 hari menghasilkan sekitar 8–10 siklus teoritis per tahun. Jumlah aktual dapat lebih rendah karena kandang perlu dikosongkan, dibersihkan, dan dipersiapkan sebelum periode pemeliharaan berikutnya.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://disnakeswan.lebakkab.go.id\&sz=32)
+
+disnakeswan.lebakkab.go.id
+
+
+
+## 3. Kategori Perikanan dan Kelautan
+
+Master pada kategori ini menggunakan kelompok Ikan dan Udang. Nama Item menggunakan nama komoditas lengkap, misalnya Ikan lele, Ikan nila, dan Udang vaname.
+
+### 3.1 Ikan air tawar
+
+| No. | Kategori               | Master | Item         | Frekuensi Aktual per Tahun                 | Estimasi Siklus per Tahun | Durasi Pembesaran sampai Panen                            | Periode Produksi          | Dasar Perhitungan                                         | Sumber          |
+| --- | ---------------------- | ------ | ------------ | ------------------------------------------ | ------------------------- | --------------------------------------------------------- | ------------------------- | --------------------------------------------------------- | --------------- |
+| 48  | Perikanan dan Kelautan | Ikan   | Ikan lele    | Data frekuensi aktual Pati belum ditemukan | Belum dihitung            | Durasi pembesaran sesuai ukuran panen belum terverifikasi | Mengikuti siklus tebar    | Memerlukan acuan lama pembesaran sampai ukuran konsumsi   | KKP             |
+| 49  | Perikanan dan Kelautan | Ikan   | Ikan nila    | Data frekuensi aktual Pati belum ditemukan | Belum dihitung            | Durasi pembesaran sesuai ukuran panen belum terverifikasi | Mengikuti siklus tebar    | Memerlukan acuan lama pembesaran sampai ukuran konsumsi   | KKP             |
+| 50  | Perikanan dan Kelautan | Ikan   | Ikan mas     | Data frekuensi belum ditemukan             | Belum dihitung            | Durasi pembesaran belum terverifikasi                     | Mengikuti siklus tebar    | Memerlukan acuan lama pembesaran sampai ukuran jual       | KKP             |
+| 51  | Perikanan dan Kelautan | Ikan   | Ikan patin   | Data frekuensi belum ditemukan             | Belum dihitung            | Durasi pembesaran belum terverifikasi                     | Mengikuti siklus tebar    | Memerlukan acuan lama pembesaran sampai ukuran konsumsi   | KKP             |
+| 52  | Perikanan dan Kelautan | Ikan   | Ikan bandeng | Data frekuensi belum ditemukan             | Belum dihitung            | Durasi pembesaran belum terverifikasi                     | Mengikuti siklus tebar    | Perlu disesuaikan dengan sistem tambak yang digunakan     | Belum ditemukan |
+| 53  | Perikanan dan Kelautan | Ikan   | Ikan gabus   | Data frekuensi belum ditemukan             | Belum dihitung            | Durasi pembesaran belum terverifikasi                     | Mengikuti siklus budidaya | Memerlukan acuan teknis pembesaran sampai ukuran jual     | Belum ditemukan |
+| 54  | Perikanan dan Kelautan | Ikan   | Ikan mujair  | Data frekuensi belum ditemukan             | Belum dihitung            | Durasi pembesaran belum terverifikasi                     | Mengikuti siklus tebar    | Memerlukan acuan teknis pembesaran sampai ukuran konsumsi | Belum ditemukan |
+
+### 3.2 Ikan laut hasil tangkapan
+
+Untuk ikan tangkap, rumus 365 dibagi durasi pembesaran tidak digunakan karena nelayan tidak membudidayakan ikan dari benih sampai panen. Pengukuran dilakukan berdasarkan bulan produksi atau musim penangkapan.
+
+| No. | Kategori               | Master | Item         | Frekuensi Aktual per Tahun                     | Estimasi Siklus per Tahun | Durasi Produksi                  | Periode Produksi                        | Dasar Perhitungan                                                                   | Sumber         |
+| --- | ---------------------- | ------ | ------------ | ---------------------------------------------- | ------------------------- | -------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------- | -------------- |
+| 55  | Perikanan dan Kelautan | Ikan   | Ikan tongkol | Data bulan produksi belum ditemukan            | Tidak berlaku             | Tidak berlaku untuk ikan tangkap | Mengikuti musim penangkapan             | Memerlukan data produksi bulanan per jenis ikan                                     | DKP Pati       |
+| 56  | Perikanan dan Kelautan | Ikan   | Ikan layang  | Data bulan produksi belum ditemukan            | Tidak berlaku             | Tidak berlaku untuk ikan tangkap | Mengikuti musim penangkapan             | Memerlukan data produksi bulanan per jenis ikan                                     | DKP Pati       |
+| 57  | Perikanan dan Kelautan | Ikan   | Ikan kembung | Data bulan produksi belum ditemukan            | Tidak berlaku             | Tidak berlaku untuk ikan tangkap | Mengikuti musim penangkapan             | Memerlukan data produksi bulanan per jenis ikan                                     | DKP Pati       |
+| 58  | Perikanan dan Kelautan | Ikan   | Ikan teri    | Data bulan produksi belum ditemukan            | Tidak berlaku             | Tidak berlaku untuk ikan tangkap | Mengikuti musim penangkapan             | Memerlukan data produksi bulanan per jenis ikan                                     | DKP Pati       |
+| 59  | Perikanan dan Kelautan | Ikan   | Ikan kakap   | Data bulan produksi belum ditemukan            | Tidak berlaku             | Tidak berlaku untuk ikan tangkap | Mengikuti musim penangkapan             | Memerlukan data produksi bulanan per jenis ikan                                     | DKP Pati       |
+| 60  | Perikanan dan Kelautan | Ikan   | Ikan kerapu  | Data bulan produksi belum ditemukan            | Tidak berlaku             | Tidak berlaku untuk ikan tangkap | Mengikuti musim penangkapan             | Memerlukan data produksi bulanan per jenis ikan                                     | DKP Pati       |
+| 61  | Perikanan dan Kelautan | Ikan   | Cumi-cumi    | Tercatat pada Januari, Februari, dan Juni 2024 | Tidak berlaku             | Tidak berlaku untuk ikan tangkap | Musim ramai biasanya September–November | Bulan tercatat dalam data produksi yang diberitakan, bukan jumlah perjalanan melaut | DKP Pati, 2024 |
+
+Data yang diberitakan dari DKP Kabupaten Pati mencatat produksi cumi-cumi sebesar 45.002 kg pada Januari 2024, 157.124 kg pada Februari, dan 6.842 kg pada Juni. Keterangan DKP juga menyebut September–November sebagai periode yang biasanya ramai penangkapan.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.mondes.co.id\&sz=32)
+
+Mondes
+
+
+
+### 3.3 Udang
+
+| No. | Kategori               | Master | Item         | Frekuensi Aktual per Tahun                 | Estimasi Siklus per Tahun | Durasi Pembesaran sampai Panen                            | Periode Produksi       | Dasar Perhitungan                                    | Sumber          |
+| --- | ---------------------- | ------ | ------------ | ------------------------------------------ | ------------------------- | --------------------------------------------------------- | ---------------------- | ---------------------------------------------------- | --------------- |
+| 62  | Perikanan dan Kelautan | Udang  | Udang vaname | Data frekuensi aktual Pati belum ditemukan | Belum dihitung            | Durasi pembesaran lokal belum terverifikasi               | Mengikuti siklus tebar | Memerlukan acuan lama pembesaran hingga ukuran panen | KKP             |
+| 63  | Perikanan dan Kelautan | Udang  | Udang windu  | Data frekuensi aktual Pati belum ditemukan | Belum dihitung            | Durasi pembesaran lokal belum terverifikasi               | Mengikuti siklus tebar | Memerlukan acuan lama pembesaran hingga ukuran panen | KKP             |
+| 64  | Perikanan dan Kelautan | Udang  | Udang putih  | Data frekuensi belum ditemukan             | Belum dihitung            | Sistem budidaya dan durasi pembesaran belum terverifikasi | Belum ditemukan        | Memerlukan identifikasi spesies dan sistem produksi  | Belum ditemukan |
+
+## 4. Kategori Pangan
+
+Pada kategori Pangan, Master merupakan kelompok produk, sedangkan Item adalah nama produk pangan yang dihasilkan. Frekuensi dihitung berdasarkan satu batch produksi, yaitu sejak proses pengolahan dimulai sampai produk selesai dihasilkan.
+
+| No. | Kategori | Master  | Item                 | Frekuensi Aktual per Tahun           | Estimasi Siklus per Tahun          | Durasi Satu Siklus                             | Periode Produksi                   | Dasar Perhitungan                                         | Sumber                   |
+| --- | -------- | ------- | -------------------- | ------------------------------------ | ---------------------------------- | ---------------------------------------------- | ---------------------------------- | --------------------------------------------------------- | ------------------------ |
+| 65  | Pangan   | Camilan | Kacang goreng        | Data frekuensi belum ditemukan       | Belum dihitung                     | Durasi batch belum ditemukan                   | Mengikuti kegiatan produksi        | Memerlukan catatan batch UMKM                             | Perlu data UMKM Pati     |
+| 66  | Pangan   | Camilan | Kacang atom          | Data frekuensi belum ditemukan       | Belum dihitung                     | Durasi batch belum ditemukan                   | Mengikuti kegiatan produksi        | Memerlukan catatan batch UMKM                             | Perlu data UMKM Pati     |
+| 67  | Pangan   | Camilan | Keripik              | Data frekuensi belum ditemukan       | Belum dihitung                     | Bergantung bahan dan proses                    | Mengikuti kegiatan produksi        | Memerlukan lama produksi setiap batch                     | Perlu data UMKM Pati     |
+| 68  | Pangan   | Kopi    | Kopi bubuk           | Data frekuensi belum ditemukan       | Belum dihitung                     | Durasi batch belum ditemukan                   | Mengikuti kegiatan pengolahan      | Memerlukan lama penggilingan dan jumlah batch             | Perlu data UMKM Pati     |
+| 69  | Pangan   | Kopi    | Kopi sangrai         | Data frekuensi belum ditemukan       | Belum dihitung                     | Durasi batch belum ditemukan                   | Mengikuti kegiatan pengolahan      | Memerlukan lama penyangraian dan jumlah batch             | Perlu data UMKM Pati     |
+| 70  | Pangan   | Kelapa  | Kelapa kopyor segar  | Data frekuensi panen belum ditemukan | Tidak berlaku sebagai batch olahan | Mengikuti masa pembentukan dan kematangan buah | Mengikuti panen                    | Produk segar merupakan hasil panen, bukan produk olahan   | Perlu data kebun Pati    |
+| 71  | Pangan   | Kelapa  | Olahan kelapa kopyor | Data frekuensi belum ditemukan       | Belum dihitung                     | Durasi batch belum ditemukan                   | Mengikuti kegiatan produksi        | Memerlukan catatan produksi UMKM                          | Perlu data UMKM Pati     |
+| 72  | Pangan   | Jeruk   | Jeruk pamelo segar   | Data frekuensi panen belum ditemukan | Tidak berlaku sebagai batch olahan | Mengikuti masa pembentukan dan kematangan buah | Musiman                            | Produk segar merupakan hasil panen                        | Perlu data kebun Pati    |
+| 73  | Pangan   | Jeruk   | Olahan jeruk pamelo  | Data frekuensi belum ditemukan       | Belum dihitung                     | Durasi batch belum ditemukan                   | Mengikuti kegiatan produksi        | Memerlukan catatan produksi UMKM                          | Perlu data UMKM Pati     |
+| 74  | Pangan   | Ikan    | Ikan pindang         | Data frekuensi belum ditemukan       | Belum dihitung                     | Durasi batch belum ditemukan                   | Mengikuti pasokan ikan             | Memerlukan jumlah batch pengolahan per tahun              | Perlu data UMKM Pati     |
+| 75  | Pangan   | Ikan    | Bandeng olahan       | Data frekuensi belum ditemukan       | Belum dihitung                     | Durasi batch belum ditemukan                   | Mengikuti pasokan bandeng          | Memerlukan jumlah batch pengolahan per tahun              | Perlu data UMKM Pati     |
+| 76  | Pangan   | Garam   | Garam konsumsi       | Data frekuensi belum ditemukan       | Belum dihitung                     | Bergantung proses penguapan dan pengolahan     | Lebih mendukung pada musim kemarau | Memerlukan durasi satu proses produksi garam              | Perlu data produsen Pati |
+| 77  | Pangan   | Tepung  | Tepung tapioka       | Data frekuensi belum ditemukan       | Belum dihitung                     | Durasi batch belum ditemukan                   | Mengikuti pasokan singkong         | Memerlukan kapasitas dan lama proses pengolahan           | Perlu data UMKM Pati     |
+| 78  | Pangan   | Gula    | Gula tebu            | Data frekuensi belum ditemukan       | Belum dihitung                     | Mengikuti proses pengolahan tebu               | Mengikuti musim giling             | Memerlukan durasi batch dan hari operasional penggilingan | Perlu data produsen Pati |
+
+Catatan: untuk produk pangan olahan, belum ada dasar yang cukup untuk menghitung jumlah siklus tahunan hanya dari jenis produknya. Lama produksi harus diperoleh dari pelaku usaha karena setiap UMKM dapat memiliki kapasitas dan waktu pengerjaan berbeda.
+
+## 5. Kategori Nonpangan
+
+Master pada kategori Nonpangan menggunakan nama kelompok produk secara singkat, misalnya Batik, Anyaman, Kuningan, dan Batu.
+
+| No. | Kategori  | Master   | Item                     | Frekuensi Aktual per Tahun     | Estimasi Siklus per Tahun | Durasi Satu Siklus                           | Periode Produksi            | Dasar Perhitungan                                       | Sumber                    |
+| --- | --------- | -------- | ------------------------ | ------------------------------ | ------------------------- | -------------------------------------------- | --------------------------- | ------------------------------------------------------- | ------------------------- |
+| 79  | Nonpangan | Batik    | Batik tulis              | Data frekuensi belum ditemukan | Belum dihitung            | Bergantung kerumitan motif dan tenaga kerja  | Mengikuti pesanan           | Memerlukan lama pengerjaan per kain                     | Perlu data pengrajin Pati |
+| 80  | Nonpangan | Batik    | Batik cap                | Data frekuensi belum ditemukan | Belum dihitung            | Bergantung proses dan kapasitas alat         | Mengikuti pesanan           | Memerlukan lama pengerjaan dan kapasitas produksi       | Perlu data pengrajin Pati |
+| 81  | Nonpangan | Anyaman  | Kerajinan anyaman        | Data frekuensi belum ditemukan | Belum dihitung            | Bergantung jenis dan ukuran produk           | Mengikuti pesanan           | Memerlukan lama pengerjaan setiap produk                | Perlu data pengrajin Pati |
+| 82  | Nonpangan | Kapuk    | Kerajinan berbahan kapuk | Data frekuensi belum ditemukan | Belum dihitung            | Durasi produksi belum ditemukan              | Mengikuti pesanan           | Memerlukan lama produksi setiap batch                   | Perlu data pengrajin Pati |
+| 83  | Nonpangan | Kuningan | Kerajinan kuningan       | Data frekuensi belum ditemukan | Belum dihitung            | Bergantung desain dan proses pengerjaan      | Mengikuti pesanan           | Memerlukan lama pengerjaan per produk                   | Perlu data pengrajin Pati |
+| 84  | Nonpangan | Kuningan | Produk logam kuningan    | Data frekuensi belum ditemukan | Belum dihitung            | Bergantung desain dan proses pengerjaan      | Mengikuti pesanan           | Perlu dipastikan apakah berbeda dari kerajinan kuningan | Perlu data pengrajin Pati |
+| 85  | Nonpangan | Batu     | Batu belah               | Data frekuensi belum ditemukan | Belum dihitung            | Bergantung proses pengambilan dan pemrosesan | Mengikuti kegiatan produksi | Memerlukan lama produksi dan periode operasi usaha      | Perlu data usaha Pati     |
+
+## 6. Rekapitulasi hasil inventarisasi
+
+| Kategori               | Jumlah Item | Keterangan                                                                                                           |
+| ---------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| Pertanian              | 35          | Memiliki beberapa acuan teknis siklus tanam sampai panen; frekuensi aktual Pati masih perlu data lokal               |
+| Peternakan             | 12          | Terdapat acuan teknis penggemukan sapi, produksi telur, dan siklus broiler                                           |
+| Perikanan dan Kelautan | 17          | Terdapat data produksi cumi-cumi Pati; data siklus budidaya dan produksi bulanan ikan lainnya masih perlu dilengkapi |
+| Pangan                 | 14          | Frekuensi batch produksi UMKM belum ditemukan                                                                        |
+| Nonpangan              | 7           | Frekuensi produksi pengrajin belum ditemukan                                                                         |
+| Total                  | 85          | Tidak mencantumkan babi maupun produk turunannya                                                                     |
+
+## 7. Kesimpulan
+
+Berdasarkan inventarisasi, perhitungan frekuensi produksi harus menggunakan durasi satu siklus lengkap, mulai dari penanaman atau pemeliharaan sampai panen. Perhitungan tersebut menghasilkan estimasi jumlah siklus yang secara teoritis dapat dilakukan dalam satu tahun.
+
+Beberapa contoh hasil perhitungan berdasarkan acuan teknis:
+
+| Item           | Durasi satu siklus | Perhitungan   | Estimasi           |
+| -------------- | ------------------ | ------------- | ------------------ |
+| Padi sawah     | 135–145 hari       | 365 ÷ 135–145 | ±2 siklus/tahun    |
+| Jagung pipilan | 80–103 hari        | 365 ÷ 80–103  | ±3–4 siklus/tahun  |
+| Kedelai        | 70–90 hari         | 365 ÷ 70–90   | ±4–5 siklus/tahun  |
+| Kacang tanah   | 90–105 hari        | 365 ÷ 90–105  | ±3–4 siklus/tahun  |
+| Semangka       | 60–70 hari         | 365 ÷ 60–70   | ±5–6 siklus/tahun  |
+| Sapi potong    | 4–6 bulan          | 365 ÷ 120–180 | ±2–3 siklus/tahun  |
+| Ayam broiler   | 35–42 hari         | 365 ÷ 35–42   | ±8–10 siklus/tahun |
+
+Angka tersebut adalah estimasi teknis, bukan data aktual Kabupaten Pati. Frekuensi aktual harus diperoleh dari catatan produksi atau data instansi setempat.
+
+Penting: untuk tanaman tahunan, ikan tangkap, produksi telur, susu, dan UMKM, satuan pengukurannya tidak selalu berupa siklus tanam-panen. Karena itu, saya tidak memaksakan rumus 365 dibagi durasi siklus pada komoditas yang memang tidak memiliki siklus seperti itu.
+
+Catatan verifikasi akhir: daftar 85 Item ini merupakan daftar kerja yang telah diperbaiki penamaan Master dan Item-nya serta menghapus babi. Keberadaan setiap Item di Kabupaten Pati dan kelayakan beberapa klasifikasi—terutama bandeng, dua Item kuningan, serta produk olahan—masih harus diverifikasi sebelum disebut inventarisasi final.

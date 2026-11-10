@@ -29,8 +29,6 @@ class MasyarakatDesa extends Model
         'nama_jalan',
         'nomor_rumah',
         'detail_alamat',
-        'latitude',
-        'longitude',
     ];
 
     public function sesi(): BelongsTo

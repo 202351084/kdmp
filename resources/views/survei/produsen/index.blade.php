@@ -103,9 +103,13 @@
                 <select name="sesi_id" class="w-full rounded-sm border border-paper-300 bg-white py-2 px-3 text-sm focus:border-merah-400 focus:outline-none">
                     <option value="">-- Pilih Bulan / Tahun --</option>
                     @foreach($daftarSesi as $s)
+                        @php
+                            $isAktifSesi = ($s->bulan == (int) date('n') && $s->tahun == (int) date('Y'));
+                        @endphp
                         <option value="{{ $s->id }}" {{ request('sesi_id') == $s->id ? 'selected' : '' }}>
                             {{ \Carbon\Carbon::createFromFormat('m', $s->bulan)->translatedFormat('F') }} {{ $s->tahun }}
                             — {{ $s->wilayah->nama ?? '-' }}
+                            ({{ $isAktifSesi ? 'Sedang Berlangsung' : 'Berakhir' }})
                         </option>
                     @endforeach
                 </select>
@@ -119,9 +123,13 @@
 
     {{-- ── Tampil setelah periode dipilih ── --}}
     @if($sesiDipilih)
-        {{-- Link Survei --}}
-        <div class="mb-6 rounded-sm border border-green-200 bg-green-50 p-5">
-            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        @php
+            $isAktif = ($sesiDipilih->bulan == (int) date('n') && $sesiDipilih->tahun == (int) date('Y'));
+        @endphp
+
+        @if($isAktif)
+            {{-- Link Survei (Hanya tampil jika periode masih berlangsung) --}}
+            <div class="mb-6 rounded-sm border border-green-200 bg-green-50 p-5">
                 <div>
                     <h2 class="text-sm font-bold text-green-800">
                         🔗 Tautan Survei Produsen —
@@ -129,22 +137,18 @@
                     </h2>
                     <p class="text-xs text-green-700 mt-1">Bagikan tautan ini ke Kelompok Tani &amp; Pelaku Ekraf untuk mengisi komoditas produksi mereka.</p>
                 </div>
-                <a href="{{ route('survei.sesi.show', $sesiDipilih->id) }}"
-                   class="shrink-0 text-xs font-medium text-green-700 hover:text-green-900 underline whitespace-nowrap">
-                    Lihat Detail Sesi →
-                </a>
-            </div>
-            <div class="mt-3 flex gap-2 items-center">
-                <div class="flex-1 rounded-sm border border-green-300 bg-white p-2.5 font-mono text-xs break-all text-ink-800">
-                    {{ url('/survei/isi/produsen/' . $sesiDipilih->token_produsen) }}
+                <div class="mt-3 flex gap-2 items-center">
+                    <div class="flex-1 rounded-sm border border-green-300 bg-white p-2.5 font-mono text-xs break-all text-ink-800">
+                        {{ url('/survei/isi/produsen/' . $sesiDipilih->token_produsen) }}
+                    </div>
+                    <button type="button"
+                            onclick="navigator.clipboard.writeText('{{ url('/survei/isi/produsen/' . $sesiDipilih->token_produsen) }}').then(() => { this.textContent = '✓ Disalin'; setTimeout(() => this.textContent = 'Salin', 2000); })"
+                            class="shrink-0 rounded-sm bg-green-600 px-3 py-2.5 text-xs font-medium text-white hover:bg-green-700 shadow-sm">
+                        Salin
+                    </button>
                 </div>
-                <button type="button"
-                        onclick="navigator.clipboard.writeText('{{ url('/survei/isi/produsen/' . $sesiDipilih->token_produsen) }}').then(() => { this.textContent = '✓ Disalin'; setTimeout(() => this.textContent = 'Salin', 2000); })"
-                        class="shrink-0 rounded-sm bg-green-600 px-3 py-2.5 text-xs font-medium text-white hover:bg-green-700 shadow-sm">
-                    Salin
-                </button>
             </div>
-        </div>
+        @endif
 
         {{-- Data Komoditas Masuk --}}
         @if($produksiPeriode->isNotEmpty())

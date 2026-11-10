@@ -687,6 +687,33 @@
                     </div>
                 </div>
 
+                {{-- Frekuensi Panen per Tahun (terisi otomatis dari acuan tetap) --}}
+                <div class="field">
+                    <label class="field-label">Frekuensi Panen per Tahun (kali)</label>
+                    <div class="input-wrap no-mic">
+                        <input type="number" min="0" max="365" step="1"
+                               x-model="frekuensi"
+                               @input="frekManual = true"
+                               placeholder="Terisi otomatis sesuai komoditas">
+                    </div>
+                    <div class="calc-box calc-box-green" x-show="infoFrekuensi" x-cloak>
+                        <span style="font-size:1rem;">🌾</span>
+                        <div>
+                            <div>
+                                Acuan <strong x-text="infoFrekuensi && infoFrekuensi.item"></strong>:
+                                <span class="calc-val" x-text="infoFrekuensi && (infoFrekuensi.rentang + ' siklus/tahun')"></span>
+                            </div>
+                            <div style="font-size:0.72rem;margin-top:0.15rem;"
+                                 x-text="infoFrekuensi && ('Durasi satu siklus ' + infoFrekuensi.durasi + ' · 365 ÷ durasi · sumber: ' + infoFrekuensi.sumber)"></div>
+                            <div style="font-size:0.72rem;margin-top:0.15rem;">Angka otomatis memakai batas bawah rentang, dan bisa Anda ubah sesuai kondisi di lapangan.</div>
+                        </div>
+                    </div>
+                    <p style="font-size:0.72rem;color:#888;margin-top:0.25rem;"
+                       x-show="!infoFrekuensi && namaKmd.trim()" x-cloak>
+                        Belum ada acuan frekuensi untuk komoditas ini. Isi manual jika Anda tahu berapa kali panen dalam setahun.
+                    </p>
+                </div>
+
                 {{-- Harga / Nilai Jual --}}
                 <div class="field">
                     <label class="field-label">Perkiraan Harga / Nilai Jual (Opsional)</label>
@@ -778,23 +805,6 @@
                     <p style="font-size:0.72rem;color:#888;margin-top:0.25rem;">Pilih bulan panen atau bulan produksi komoditas ini.</p>
                 </div>
 
-                {{-- Keterangan --}}
-                <div class="field" x-data="micInput(() => ket, v => ket = v, 'text')">
-                    <label class="field-label">Keterangan (Opsional)</label>
-                    <div class="input-wrap textarea-wrap">
-                        <textarea x-ref="el"
-                                  :value="ket"
-                                  @input="ket = $event.target.value"
-                                  placeholder="Catatan tambahan, kondisi panen, dll..."></textarea>
-                        <button type="button" class="mic-btn" :class="{ listening: isListening }" @click="toggle()" title="Suara">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
                 {{-- Tombol tambah ke daftar --}}
                 <button type="button" class="btn-add" @click="tambah()">
                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -850,7 +860,7 @@
                                 </template>
                             </span>
                             Bulan <span x-text="namaBulan(item.bulan_produksi)"></span>
-                            <span x-show="item.keterangan"> &bull; <em x-text="item.keterangan"></em></span>
+                            <span x-show="item.frekuensi"> &bull; <span x-text="item.frekuensi"></span>× panen/tahun</span>
                         </p>
                     </div>
                     <div style="display:flex;gap:0.4rem;flex-shrink:0;">
@@ -977,6 +987,14 @@
                         </div>
                     </div>
                 </div>
+                {{-- Frekuensi Panen per Tahun (Modal Edit) --}}
+                <div class="field" style="margin-bottom:0;">
+                    <label class="field-label">Frekuensi Panen per Tahun (kali)</label>
+                    <div class="input-wrap no-mic">
+                        <input type="number" min="0" max="365" step="1" x-model="editForm.frekuensi"
+                               placeholder="Jumlah panen dalam setahun">
+                    </div>
+                </div>
                 {{-- Harga (Modal Edit) --}}
                 <div class="field" style="margin-bottom:0;">
                     <label class="field-label">Harga / Nilai Jual</label>
@@ -1045,20 +1063,6 @@
                         </select>
                     </div>
                 </div>
-                {{-- Keterangan --}}
-                <div class="field" style="margin-bottom:0;" x-data="micInput(() => editForm.keterangan, v => editForm.keterangan = v, 'text')">
-                    <label class="field-label">Keterangan</label>
-                    <div class="input-wrap textarea-wrap">
-                        <textarea x-ref="el" x-model="editForm.keterangan"
-                                  rows="2" placeholder="Catatan tambahan..."></textarea>
-                        <button type="button" class="mic-btn" :class="{ listening: isListening }" @click="toggle()" title="Suara">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" @click="showEditModal = false">Batal</button>
@@ -1076,18 +1080,37 @@
         const CSRF   = '{{ csrf_token() }}';
         const SATUAN_LIST = @json($satuanList);
         const BULAN_OPTS  = @json($bulans);
+        // Frekuensi panen per tahun: nama komoditas (huruf kecil) → data acuan tetap (dari server, tanpa DB)
+        const FREKUENSI_PANEN = @json($frekuensiPanen);
+
+        function cariFrekuensi(nama) {
+            const key = (nama || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+            return key && FREKUENSI_PANEN[key] ? FREKUENSI_PANEN[key] : null;
+        }
 
         function produsenSurvei() {
             return {
                 namaResponden: '', kategori: '', subKategori: '',
-                namaKmd: '', jumlah: '', satuan: '', bulan: '{{ $sesi->bulan }}', ket: '',
+                namaKmd: '', jumlah: '', satuan: '', bulan: '{{ $sesi->bulan }}',
                 harga: '', tipeHarga: 'Satuan',
+                frekuensi: '', frekManual: false, infoFrekuensi: null,
                 cart: [], errMsg: '',
+
+                init() {
+                    // Isi frekuensi otomatis setiap nama komoditas berubah (kecuali sudah diubah manual)
+                    this.$watch('namaKmd', (val) => {
+                        this.infoFrekuensi = cariFrekuensi(val);
+                        if (!this.frekManual || !val.trim()) {
+                            this.frekuensi = this.infoFrekuensi ? this.infoFrekuensi.frekuensi : '';
+                            this.frekManual = false;
+                        }
+                    });
+                },
 
                 // Edit modal state
                 showEditModal: false,
                 editIdx: null,
-                editForm: { nama_komoditas:'', kategori:'', sub_kategori:'', jumlah_produksi:'', satuan:'', harga:'', tipe_harga:'Satuan', bulan_produksi:'', keterangan:'' },
+                editForm: { nama_komoditas:'', kategori:'', sub_kategori:'', jumlah_produksi:'', satuan:'', harga:'', tipe_harga:'Satuan', bulan_produksi:'', frekuensi:'' },
 
                 formatRupiah(num) {
                     if (num === null || num === undefined || num === '' || isNaN(num)) return 'Rp 0';
@@ -1140,7 +1163,6 @@
                     if (!this.editForm.nama_komoditas.trim()) { alert('Nama komoditas wajib diisi!'); return; }
                     if (!this.editForm.bulan_produksi) { alert('Pilih bulan produksi!'); return; }
                     this.editForm.nama_komoditas = cap(this.editForm.nama_komoditas.replace(/\./g,''));
-                    this.editForm.keterangan = (this.editForm.keterangan || '').replace(/\./g,'');
                     this.cart[this.editIdx] = { ...this.editForm };
                     this.showEditModal = false;
                     this.editIdx = null;
@@ -1159,9 +1181,10 @@
                         harga: this.harga,
                         tipe_harga: this.tipeHarga,
                         bulan_produksi: this.bulan,
-                        keterangan: this.ket.replace(/\./g,''),
+                        frekuensi: this.frekuensi,
                     });
-                    this.namaKmd = ''; this.jumlah = ''; this.satuan = ''; this.harga = ''; this.tipeHarga = 'Satuan'; this.ket = '';
+                    this.namaKmd = ''; this.jumlah = ''; this.satuan = ''; this.harga = ''; this.tipeHarga = 'Satuan';
+                    this.frekuensi = ''; this.frekManual = false; this.infoFrekuensi = null;
                 },
                 submitAll() {
                     if (!this.cart.length) { this.errMsg = 'Tambah minimal 1 komoditas dulu!'; return; }
@@ -1178,7 +1201,6 @@
                         addF(form, `komoditas[${i}][harga]`,           it.harga);
                         addF(form, `komoditas[${i}][tipe_harga]`,      it.tipe_harga);
                         addF(form, `komoditas[${i}][bulan_produksi]`,  it.bulan_produksi);
-                        addF(form, `komoditas[${i}][keterangan]`,      it.keterangan);
                     });
                     document.body.appendChild(form);
                     form.submit();

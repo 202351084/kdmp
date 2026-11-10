@@ -112,7 +112,7 @@
                                title="{{ url('/survei/isi/rt/' . $item->token_rt) }}">
                     </div>
                     <button type="button"
-                            onclick="copyAndRedirect('{{ url('/survei/isi/rt/' . $item->token_rt) }}', '{{ route('survei.rt.index', ['id_sesi' => $item->id]) }}', 'Tautan Survei RT (Data Baseline)', 'Data RT', this)"
+                            onclick="copyAndRedirect('{{ url('/survei/isi/rt/' . $item->token_rt) }}', '{{ route('survei.rt.index') }}', 'Tautan Survei RT (Data Baseline)', 'Data RT', this)"
                             title="Salin Tautan & Buka Data RT"
                             aria-label="Salin Tautan & Buka Data RT"
                             class="shrink-0 inline-flex items-center justify-center rounded-sm bg-blue-600 p-2 text-white shadow-sm hover:bg-blue-700 active:scale-95 transition-all">

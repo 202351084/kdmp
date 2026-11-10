@@ -26,14 +26,6 @@ class PublicSesi1Controller extends Controller
             ->with(['wilayah.parent.parent', 'petugas', 'narasumber.demografi'])
             ->firstOrFail();
 
-        // Auto-copy dari periode sebelumnya jika data narasumber di sesi ini masih kosong
-        if ($sesi->narasumber->isEmpty()) {
-            if ($sesi->salinDataDariPeriodeSebelumnya()) {
-                $sesi->load(['wilayah.parent.parent', 'petugas', 'narasumber.demografi']);
-                session()->flash('info', 'Data narasumber & demografi dari periode sebelumnya otomatis disalin. Silakan sesuaikan jika ada perubahan.');
-            }
-        }
-
         $rekap = $this->hitungRekapDemografi($sesi);
 
         $kkPerNarasumber = $sesi->narasumber->mapWithKeys(function ($ns) {
@@ -217,24 +209,6 @@ class PublicSesi1Controller extends Controller
         return redirect()
             ->route('survei.public.show', $token)
             ->with('success', 'Sesi 1 Data Demografi Desa berhasil diselesaikan.');
-    }
-
-    // ─── Salin Data dari Periode Sebelumnya ──────────────────────────────────
-    public function salinSebelumnya(string $token): RedirectResponse
-    {
-        $sesi = SesiSurvei::where('token_masyarakat', $token)->firstOrFail();
-        $helper = new SesiSurveiController();
-        $berhasil = $helper->salinDataNarasumberSesiSebelumnya($sesi);
-
-        if ($berhasil) {
-            return redirect()
-                ->route('survei.public.sesi1.show', $token)
-                ->with('success', 'Data narasumber & demografi dari periode sebelumnya berhasil disalin! Silakan sesuaikan jika ada perubahan.');
-        }
-
-        return redirect()
-            ->route('survei.public.sesi1.show', $token)
-            ->with('error', 'Tidak ditemukan data survei periode sebelumnya untuk desa ini.');
     }
 
     // ─── Private Helper ──────────────────────────────────────────────────────

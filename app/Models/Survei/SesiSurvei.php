@@ -43,7 +43,7 @@ class SesiSurvei extends Model
 
     public function rt(): HasMany
     {
-        return $this->hasMany(RtDesa::class, 'id_sesi');
+        return $this->hasMany(RtDesa::class, 'id_wilayah', 'id_wilayah');
     }
 
     public function masyarakat(): HasMany
@@ -104,49 +104,11 @@ class SesiSurvei extends Model
     }
 
     /**
-     * Salin data narasumber & demografi dari sesi survei sebelumnya di desa/wilayah yang sama.
+     * Data RT kini merupakan Master Data Desa murni (berlaku di semua periode).
+     * Method ini dipertahankan untuk kompatibilitas jika dipanggil.
      */
-    public function salinDataDariPeriodeSebelumnya(): bool
+    public function salinRtDariPeriodeSebelumnya(): int
     {
-        if ($this->narasumber()->exists()) {
-            return false;
-        }
-
-        $sesiSebelumnya = self::where('id_wilayah', $this->id_wilayah)
-            ->where('id', '!=', $this->id)
-            ->with(['narasumber.demografi'])
-            ->latest('id')
-            ->first();
-
-        if (!$sesiSebelumnya || $sesiSebelumnya->narasumber->isEmpty()) {
-            return false;
-        }
-
-        foreach ($sesiSebelumnya->narasumber as $nsLama) {
-            $nsBaru = NarasumberSesi::create([
-                'id_sesi'         => $this->id,
-                'nama_narasumber' => $nsLama->nama_narasumber,
-                'kategori'        => $nsLama->kategori,
-                'nomor_kontak'    => $nsLama->nomor_kontak,
-                'keterangan'      => $nsLama->keterangan,
-                'status'          => 'draft',
-            ]);
-
-            foreach ($nsLama->demografi as $demLama) {
-                DemografiNarasumber::create([
-                    'id_sesi'           => $this->id,
-                    'id_narasumber'     => $nsBaru->id_narasumber,
-                    'kelompok_umur'     => $demLama->kelompok_umur,
-                    'jumlah_kk'         => $demLama->jumlah_kk,
-                    'jumlah_laki'       => $demLama->jumlah_laki,
-                    'jumlah_perempuan'  => $demLama->jumlah_perempuan,
-                    'sumber_data'       => $demLama->sumber_data,
-                    'tanggal_data'      => $demLama->tanggal_data,
-                    'keterangan_sumber' => $demLama->keterangan_sumber,
-                ]);
-            }
-        }
-
-        return true;
+        return 0;
     }
 }

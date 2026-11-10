@@ -72,7 +72,7 @@ Route::get('/survei/isi/{token}/sesi1/narasumber/{narasumber}', [$cSurvei . 'Pub
 Route::post('/survei/isi/{token}/sesi1/narasumber/{narasumber}/demografi', [$cSurvei . 'PublicSesi1Controller', 'storeDemografi'])->name('survei.public.sesi1.demografi.store');
 Route::delete('/survei/isi/{token}/sesi1/narasumber/{narasumber}', [$cSurvei . 'PublicSesi1Controller', 'destroyNarasumber'])->name('survei.public.sesi1.narasumber.destroy');
 Route::post('/survei/isi/{token}/sesi1/selesaikan', [$cSurvei . 'PublicSesi1Controller', 'selesaikan'])->name('survei.public.sesi1.selesaikan');
-Route::post('/survei/isi/{token}/sesi1/salin-sebelumnya', [$cSurvei . 'PublicSesi1Controller', 'salinSebelumnya'])->name('survei.public.sesi1.salin_sebelumnya');
+
 
 Route::get('/survei/isi/{token}/sesi2', [$cSurvei . 'PublicSesi2Controller', 'show'])->name('survei.public.sesi2.show');
 Route::post('/survei/isi/{token}/sesi2/narasumber', [$cSurvei . 'PublicSesi2Controller', 'storeNarasumber'])->name('survei.public.sesi2.narasumber.store');
@@ -149,7 +149,7 @@ Route::middleware('auth')->group(function () use ($cSurvei) {
         Route::delete('sesi/{sesi}/sesi1/narasumber/{narasumber}', [$cSurvei . 'Sesi1DemografiController', 'destroyNarasumber'])->name('sesi1.narasumber.destroy');
         Route::post('sesi/{sesi}/sesi1/simpan-draft', [$cSurvei . 'Sesi1DemografiController', 'simpanDraft'])->name('sesi1.draft');
         Route::post('sesi/{sesi}/sesi1/selesaikan', [$cSurvei . 'Sesi1DemografiController', 'selesaikan'])->name('sesi1.selesaikan');
-        Route::post('sesi/{sesi}/sesi1/salin-sebelumnya', [$cSurvei . 'Sesi1DemografiController', 'salinSebelumnya'])->name('sesi1.salin_sebelumnya');
+
 
         // ─── Sesi 2: Potensi Produksi Desa (Admin Review & Pengisian) ───
         Route::get('sesi/{sesi}/sesi2', [$cSurvei . 'Sesi2ProduksiController', 'show'])->name('sesi2.show');

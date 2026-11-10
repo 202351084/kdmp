@@ -33,14 +33,6 @@ class Sesi1DemografiController extends Controller
 
         $sesi->load(['wilayah.parent.parent', 'narasumber.demografi']);
 
-        // Auto-copy dari periode sebelumnya jika data narasumber di sesi ini masih kosong
-        if ($sesi->narasumber->isEmpty()) {
-            if ($sesi->salinDataDariPeriodeSebelumnya()) {
-                $sesi->load(['wilayah.parent.parent', 'narasumber.demografi']);
-                session()->flash('info', 'Data narasumber & demografi dari periode sebelumnya otomatis disalin. Silakan sesuaikan jika ada perubahan.');
-            }
-        }
-
         // Hitung rekap demografi dari semua narasumber
         $rekap = $this->hitungRekapDemografi($sesi);
 
@@ -257,23 +249,6 @@ class Sesi1DemografiController extends Controller
         return redirect()
             ->route('survei.sesi.show', $sesi->id)
             ->with('success', 'Sesi 1 Data Demografi Desa berhasil diselesaikan.');
-    }
-
-    // ─── Salin Data dari Periode Sebelumnya ──────────────────────────────────
-    public function salinSebelumnya(SesiSurvei $sesi): RedirectResponse
-    {
-        $helper = new SesiSurveiController();
-        $berhasil = $helper->salinDataNarasumberSesiSebelumnya($sesi);
-
-        if ($berhasil) {
-            return redirect()
-                ->route('survei.sesi1.show', $sesi->id)
-                ->with('success', 'Data narasumber & demografi dari periode sebelumnya berhasil disalin! Silakan sesuaikan jika ada perubahan.');
-        }
-
-        return redirect()
-            ->route('survei.sesi1.show', $sesi->id)
-            ->with('error', 'Tidak ditemukan data survei periode sebelumnya untuk desa ini.');
     }
 
     // ─── Private Helper ───────────────────────────────────────────────────────

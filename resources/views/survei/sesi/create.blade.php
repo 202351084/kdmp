@@ -85,16 +85,6 @@
                 </div>
             </div>
 
-            {{-- Opsi Salin Data --}}
-            <div class="mb-8 rounded-sm border border-sawah-200 bg-sawah-50 p-4">
-                <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" name="salin_data" value="1" checked class="h-4 w-4 rounded border-paper-300 text-merah-600 focus:ring-merah-500">
-                    <span class="text-xs font-semibold text-sawah-900">
-                        Otomatis Salin Data Periode Sebelumnya
-                    </span>
-                </label>
-            </div>
-
             <div class="flex items-center justify-end gap-3 border-t border-paper-200 pt-5">
                 <a href="{{ route($routeBase . '.index') }}" class="text-sm font-medium text-ink-600 hover:text-ink-800 hover:underline">Batal</a>
                 <button type="submit" class="rounded-sm bg-merah-500 px-5 py-2 text-sm font-medium text-paper-50 hover:bg-merah-600 shadow-sm">Buat Sesi & Generate Link</button>

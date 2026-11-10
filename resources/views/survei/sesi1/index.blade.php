@@ -1,4 +1,4 @@
-﻿<x-layouts.app :title="$title" eyebrow="Survei — Sesi 1">
+<x-layouts.app :title="$title" eyebrow="Survei — Sesi 1">
 
     {{-- ═══════════════════════════════════════════════════════════════════
          HEADER HALAMAN
@@ -87,17 +87,6 @@
                         <h2 class="font-display text-base font-semibold text-ink-900">Daftar Narasumber</h2>
                     </div>
                     <div class="flex items-center gap-2">
-                        <form method="POST" action="{{ route('survei.sesi1.salin_sebelumnya', $sesi->id) }}" onsubmit="return confirm('Salin data narasumber & demografi dari periode sebelumnya?')">
-                            @csrf
-                            <button type="submit"
-                                    title="Salin narasumber & data dari periode sebelumnya di desa ini"
-                                    class="flex items-center gap-1.5 rounded-sm border border-paper-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 hover:border-merah-400 hover:text-merah-600 transition-colors whitespace-nowrap">
-                                <svg class="h-3.5 w-3.5 text-ink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                </svg>
-                                Salin Periode Sebelumnya
-                            </button>
-                        </form>
                         <button type="button"
                                 onclick="document.getElementById('modal-tambah-narasumber').classList.remove('hidden')"
                                 id="btn-tambah-narasumber"
@@ -117,22 +106,12 @@
                                   d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
                         </svg>
                         <p class="text-sm font-medium text-ink-800">Belum ada narasumber untuk periode ini.</p>
-                        <p class="text-xs text-ink-500 mt-1 mb-4">Anda dapat menyalin data dari survei periode sebelumnya di desa ini atau menambah manual.</p>
+                        <p class="text-xs text-ink-500 mt-1 mb-4">Silakan tambahkan narasumber secara manual.</p>
                         <div class="flex items-center justify-center gap-3">
-                            <form method="POST" action="{{ route('survei.sesi1.salin_sebelumnya', $sesi->id) }}">
-                                @csrf
-                                <button type="submit"
-                                        class="inline-flex items-center gap-1.5 rounded-sm bg-sawah-600 px-4 py-2 text-xs font-semibold text-white hover:bg-sawah-700 shadow-sm transition-colors">
-                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                    </svg>
-                                    Salin Data Periode Sebelumnya
-                                </button>
-                            </form>
                             <button type="button"
                                     onclick="document.getElementById('modal-tambah-narasumber').classList.remove('hidden')"
-                                    class="inline-flex items-center gap-1.5 rounded-sm border border-paper-300 bg-white px-4 py-2 text-xs font-semibold text-ink-700 hover:border-merah-400 hover:text-merah-600 transition-colors">
-                                + Tambah Manual
+                                    class="inline-flex items-center gap-1.5 rounded-sm bg-merah-500 px-4 py-2 text-xs font-semibold text-white hover:bg-merah-600 shadow-sm transition-colors">
+                                + Tambah Narasumber
                             </button>
                         </div>
                     </div>

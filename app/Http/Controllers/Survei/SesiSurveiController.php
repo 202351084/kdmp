@@ -111,7 +111,6 @@ class SesiSurveiController extends ModuleCrudController
             'tanggal_survei' => 'required|date',
             'tahun'          => 'nullable|integer|min:2000|max:2100',
             'bulan'          => 'nullable|integer|min:1|max:12',
-            'salin_data'     => 'nullable|boolean',
         ]);
 
         $userWilayahId = $this->getUserWilayahId();
@@ -133,26 +132,8 @@ class SesiSurveiController extends ModuleCrudController
 
         $sesi = SesiSurvei::create($validated);
 
-        // Salin data narasumber & demografi dari periode sebelumnya secara otomatis jika opsi diaktifkan
-        $salin = $request->has('salin_data') ? $request->boolean('salin_data') : true;
-        $pesanSalin = '';
-        if ($salin) {
-            $disalin = $sesi->salinDataDariPeriodeSebelumnya();
-            if ($disalin) {
-                $pesanSalin = ' Data narasumber & demografi dari periode sebelumnya otomatis disalin sebagai acuan.';
-            }
-        }
-
         return redirect()->route('survei.sesi.show', $sesi->id)
-            ->with('success', 'Sesi survei berhasil dibuat.' . $pesanSalin);
-    }
-
-    /**
-     * Helper untuk menyalin data narasumber & demografi dari sesi survei sebelumnya di desa yang sama.
-     */
-    public function salinDataNarasumberSesiSebelumnya(SesiSurvei $targetSesi): bool
-    {
-        return $targetSesi->salinDataDariPeriodeSebelumnya();
+            ->with('success', 'Sesi survei berhasil dibuat.');
     }
 
     public function show(int|string $id): View

@@ -37,25 +37,28 @@ class ValidasiSurveiController extends Controller
         $bulan = $request->input('bulan', (int)date('n'));
         $tahun = $request->input('tahun', (int)date('Y'));
 
-        // Filter RtDesa by selected period & admin's village
-        $rtsQuery = RtDesa::with(['wilayah', 'sesi'])
-            ->whereHas('sesi', function ($q) use ($bulan, $tahun, $idWilayah) {
-                $q->where('bulan', (int)$bulan)
-                  ->where('tahun', (int)$tahun);
-                if ($idWilayah) {
-                    $q->where('id_wilayah', $idWilayah);
-                }
-            });
+        // Ambil sesi pada periode bulan & tahun yang dipilih
+        $sesisDiPeriode = SesiSurvei::where('bulan', (int)$bulan)->where('tahun', (int)$tahun);
+        if ($idWilayah) {
+            $sesisDiPeriode->where('id_wilayah', $idWilayah);
+        }
+        $sesiIds = $sesisDiPeriode->pluck('id')->toArray();
+        $defaultSesi = $sesisDiPeriode->first();
 
+        // Baseline kependudukan adalah Master Data RT Desa murni
+        $rtsQuery = RtDesa::with('wilayah')->orderBy('dusun')->orderBy('nama_rt');
         if ($idWilayah) {
             $rtsQuery->where('id_wilayah', $idWilayah);
         }
-
         $rts = $rtsQuery->get();
 
         $matchedMasyarakatIds = collect();
 
         foreach ($rts as $rt) {
+            // Set id_sesi ke sesi desa pada periode terpilih untuk tautan lihat detail
+            $sesiWilayah = $sesisDiPeriode->where('id_wilayah', $rt->id_wilayah)->first() ?? $defaultSesi;
+            $rt->id_sesi = $sesiWilayah?->id;
+
             preg_match('/\d+/', $rt->nama_rt, $rtMatch);
             preg_match('/\d+/', $rt->rw, $rwMatch);
             
@@ -65,7 +68,7 @@ class ValidasiSurveiController extends Controller
             // Get all MasyarakatDesa for this session & village with anggota that have completed consumption survey
             $masyarakatQuery = MasyarakatDesa::with('anggota')
                 ->whereHas('konsumsi')
-                ->where('id_sesi', $rt->id_sesi);
+                ->whereIn('id_sesi', $sesiIds);
 
             if ($idWilayah) {
                 $masyarakatQuery->where('id_wilayah', $idWilayah);
@@ -146,13 +149,15 @@ class ValidasiSurveiController extends Controller
     {
         $idWilayah = $this->getUserWilayahId();
 
-        $rtDesaQuery = RtDesa::with(['wilayah', 'sesi'])
-            ->where('id_sesi', $id_sesi)
-            ->where('nama_rt', $nama_rt);
-
+        $sesiQuery = SesiSurvei::with('wilayah')->where('id', $id_sesi);
         if ($idWilayah) {
-            $rtDesaQuery->where('id_wilayah', $idWilayah);
+            $sesiQuery->where('id_wilayah', $idWilayah);
         }
+        $sesi = $sesiQuery->firstOrFail();
+
+        $rtDesaQuery = RtDesa::with('wilayah')
+            ->where('id_wilayah', $sesi->id_wilayah)
+            ->where('nama_rt', $nama_rt);
 
         if ($rw) {
             $rtDesaQuery->where('rw', $rw);
@@ -161,12 +166,6 @@ class ValidasiSurveiController extends Controller
         $rtDesa = $rtDesaQuery->first();
         if (!$rtDesa) {
             // Jika Ketua RT belum mengisi baseline, tetap izinkan admin melihat data riil warga yang sudah masuk
-            $sesiQuery = SesiSurvei::with('wilayah')->where('id', $id_sesi);
-            if ($idWilayah) {
-                $sesiQuery->where('id_wilayah', $idWilayah);
-            }
-            $sesi = $sesiQuery->firstOrFail();
-
             $rtDesa = (object)[
                 'id' => null,
                 'id_sesi' => $sesi->id,
@@ -174,12 +173,14 @@ class ValidasiSurveiController extends Controller
                 'nama_rt' => $nama_rt,
                 'rw' => $rw,
                 'dusun' => null,
-                'nama_ketua_rt' => 'Belum Mengisi Baseline',
+                'nama_ketua_rt' => 'Belum Terdaftar di Master Data',
                 'total_kk_baseline' => 0,
                 'total_jiwa_baseline' => 0,
                 'wilayah' => $sesi->wilayah,
                 'sesi' => $sesi,
             ];
+        } else {
+            $rtDesa->sesi = $sesi;
         }
 
         preg_match('/\d+/', $rtDesa->nama_rt, $rtMatch);
